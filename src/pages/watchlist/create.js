@@ -18,34 +18,39 @@ function WatchlistCreate() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userId) {
-      setError("Please log in to add to watchlist");
+      setError("Please log in to create a watchlist");
       navigate("/");
       return;
     }
     try {
+      // Include user_id in the request body
+      const requestData = {
+        ...formData,
+        user_id: userId,
+      };
       const response = await axios.post(
         "http://127.0.0.1:5000/watchlists/create",
-        formData,
+        requestData,
         { withCredentials: true }
       );
-      console.log("Watchlist create response:", response.data); 
+      console.log("Watchlist create response:", response.data);
       setFormData({ movie_id: "", title: "" });
       navigate("/watchlist");
     } catch (err) {
-      console.error("Watchlist create error:", err.response?.data); 
-      setError(err.response?.data?.error || "Failed to add to watchlist");
+      console.error("Watchlist create error:", err.response?.data);
+      setError(err.response?.data?.error || "Failed to create watchlist");
     }
   };
 
   return (
     <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Add to Watchlist</h2>
+      <h2 className="text-2xl mb-4">Create Watchlist</h2>
       {error && <p className="text-red-500">{error}</p>}
       <form onSubmit={handleSubmit} className="mb-6">
         <input
           type="text"
           name="movie_id"
-          placeholder="Movie ID"
+          placeholder="Movie ID (optional)"
           value={formData.movie_id}
           onChange={handleChange}
           className="p-2 border rounded mr-2"
@@ -53,13 +58,13 @@ function WatchlistCreate() {
         <input
           type="text"
           name="title"
-          placeholder="Movie Title"
+          placeholder="Watchlist Title"
           value={formData.title}
           onChange={handleChange}
           className="p-2 border rounded mr-2"
         />
         <button type="submit" className="bg-green-500 text-white p-2 rounded">
-          Add to Watchlist
+          Create Watchlist
         </button>
       </form>
       <button

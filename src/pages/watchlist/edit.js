@@ -18,14 +18,14 @@ function WatchlistEdit() {
 
     const fetchWatchlistItem = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/watchlists", {
-          withCredentials: true,
-        });
-        const item = response.data.find(
-          (entry) => entry.id === parseInt(watchlistId)
+        const response = await axios.get(
+          `http://127.0.0.1:5000/watchlists/${watchlistId}`,
+          {
+            params: { user_id: userId },
+            withCredentials: true,
+          }
         );
-        if (!item) throw new Error("Watchlist item not found");
-        setFormData({ title: item.title });
+        setFormData({ title: response.data.title });
       } catch (err) {
         setError(err.response?.data?.error || "Failed to fetch watchlist item");
       }
@@ -44,9 +44,14 @@ function WatchlistEdit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Include user_id in the request body
+      const requestData = {
+        ...formData,
+        user_id: userId,
+      };
       await axios.put(
         `http://127.0.0.1:5000/watchlists/update/${watchlistId}`,
-        formData,
+        requestData,
         { withCredentials: true }
       );
       navigate("/watchlist");
@@ -63,7 +68,7 @@ function WatchlistEdit() {
         <input
           type="text"
           name="title"
-          placeholder="Movie Title"
+          placeholder="Watchlist Title"
           value={formData.title}
           onChange={handleChange}
           className="p-2 border rounded mr-2"

@@ -48,6 +48,36 @@ function WatchlistSingle() {
     fetchWatchlistItem();
   }, [watchlistId, userId, navigate]);
 
+  const handleRemoveMovie = async (movieIdToRemove) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove "${movieIdToRemove}" from this watchlist?`
+      )
+    )
+      return;
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/watchlists/update/${watchlistId}`,
+        {
+          user_id: userId,
+          remove_movie_id: movieIdToRemove, // Send movie ID to remove
+        },
+        { withCredentials: true }
+      );
+      console.log("Remove movie response:", response.data);
+
+      // Update local state after successful removal
+      setWatchlistItem((prev) => ({
+        ...prev,
+        movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
+      }));
+      setMovies((prev) => prev.filter((movie) => movie.id !== movieIdToRemove));
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to remove movie");
+    }
+  };
+
   if (!watchlistItem) return <div>Loading...</div>;
 
   return (
@@ -58,14 +88,20 @@ function WatchlistSingle() {
         <p>Movies in this watchlist:</p>
         {movies.length > 0 ? (
           <ul className="space-y-4">
-            {movies.map((movie, index) => (
+            {movies.map((movie) => (
               <li
-                key={index}
+                key={movie.id}
                 className="p-4 bg-gray-100 rounded shadow flex justify-between items-center"
               >
                 <div>
                   <strong>{movie.movie_title}</strong> ({movie.movie_genres})
                 </div>
+                <button
+                  onClick={() => handleRemoveMovie(movie.id)}
+                  className="bg-red-500 text-white p-1 rounded"
+                >
+                  Remove
+                </button>
               </li>
             ))}
           </ul>
