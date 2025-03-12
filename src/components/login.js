@@ -27,9 +27,9 @@ function Login() {
           withCredentials: true,
         }
       );
-      const userId = response.data.user_id; 
+      const userId = response.data.user_id;
       localStorage.setItem("userId", userId);
-      navigate("/movies");
+      navigate("/home");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }
