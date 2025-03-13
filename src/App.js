@@ -1,11 +1,15 @@
-//libraries
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-//components
-import Login from "../src/components/login";
-import Register from "../src/components/register";
-//pages
-import All from "../src/pages/movies";
+// src/App.jsx
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
+import axios from "axios";
+import Login from "./components/login";
+import Register from "./components/register";
+import All from "./pages/movies";
 import MovieSingle from "./pages/movies/single";
 import MovieCreate from "./pages/movies/create";
 import MovieEdit from "./pages/movies/edit";
@@ -14,33 +18,127 @@ import WatchlistSingle from "./pages/watchlist/single";
 import WatchlistCreate from "./pages/watchlist/create";
 import WatchlistEdit from "./pages/watchlist/edit";
 import PageNotFound from "./pages/pageNotFound";
-import Home from "./pages/home.js";
-
+import Home from "./pages/home";
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setAuthenticated(true);
+      console.log(
+        "Authenticated state set to true on mount with token:",
+        token
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log(
+        "Authenticated state:",
+        authenticated,
+        "Token:",
+        localStorage.getItem("token")
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [authenticated]);
+
+  const onAuthenticated = (auth, authData) => {
+    setAuthenticated(auth);
+    if (auth && authData) {
+      const { token, userId } = authData;
+      const cleanToken = token.replace(/['"]+/g, "").trim();
+      localStorage.setItem("token", cleanToken);
+      localStorage.setItem("userId", userId);
+      console.log("Token set in localStorage:", cleanToken);
+      console.log("UserId set in localStorage:", userId);
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      console.log("Token and UserId removed from localStorage");
+    }
+  };
+
+  const handleLogout = () => {
+    axios
+      .post("http://127.0.0.1:5000/auth/logout", {}, { withCredentials: true })
+      .then(() => {
+        onAuthenticated(false);
+        navigate("/");
+      })
+      .catch((err) => console.error("Logout error:", err));
+  };
+
   return (
-    <Router>
-      <div>
-        <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Login />} />
-          <Route path="/movies" element={<All />} />
-          <Route path="/movies/:movieId" element={<MovieSingle />} />
-          <Route path="/movies/create" element={<MovieCreate />} />
-          <Route path="/movies/:movieId/edit" element={<MovieEdit />} />{" "}
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/watchlist/:watchlistId" element={<WatchlistSingle />} />
-          <Route path="/watchlist/create" element={<WatchlistCreate />} />
-          <Route
-            path="/watchlist/:watchlistId/edit"
-            element={<WatchlistEdit />}
-          />{" "}
-          <Route path="*" element={<PageNotFound />} />
-          <Route path="/home" element={<Home />} />
-        </Routes>
-      </div>
-    </Router>
+    <div>
+      <Routes>
+        <Route
+          path="/register"
+          element={
+            <Register
+              authenticated={authenticated}
+              onAuthenticated={onAuthenticated}
+            />
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <Login
+              authenticated={authenticated}
+              onAuthenticated={onAuthenticated}
+            />
+          }
+        />
+        <Route path="/movies" element={<All authenticated={authenticated} />} />
+        <Route
+          path="/movies/:movieId"
+          element={<MovieSingle authenticated={authenticated} />}
+        />
+        <Route
+          path="/movies/create"
+          element={<MovieCreate authenticated={authenticated} />}
+        />
+        <Route
+          path="/movies/:movieId/edit"
+          element={<MovieEdit authenticated={authenticated} />}
+        />
+        <Route
+          path="/watchlist"
+          element={<Watchlist authenticated={authenticated} />}
+        />
+        <Route
+          path="/watchlist/:watchlistId"
+          element={<WatchlistSingle authenticated={authenticated} />}
+        />
+        <Route
+          path="/watchlist/create"
+          element={<WatchlistCreate authenticated={authenticated} />}
+        />
+        <Route
+          path="/watchlist/:watchlistId/edit"
+          element={<WatchlistEdit authenticated={authenticated} />}
+        />
+        <Route path="*" element={<PageNotFound />} />
+        <Route
+          path="/home"
+          element={
+            <Home authenticated={authenticated} onLogout={handleLogout} />
+          }
+        />
+      </Routes>
+    </div>
   );
 }
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}

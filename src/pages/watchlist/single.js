@@ -1,17 +1,19 @@
+// src/pages/watchlist/single.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 
-function WatchlistSingle() {
+function WatchlistSingle({ authenticated }) {
   const { watchlistId } = useParams();
   const [watchlistItem, setWatchlistItem] = useState(null);
-  const [movies, setMovies] = useState([]); // Store full movie data
+  const [movies, setMovies] = useState([]);
   const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!watchlistId || !userId) {
+    if (!watchlistId || !userId || !token || !authenticated) {
       setError("Please log in or provide a valid watchlist ID");
       navigate("/");
       return;
@@ -23,15 +25,16 @@ function WatchlistSingle() {
           `http://localhost:5000/watchlists/${watchlistId}`,
           {
             params: { user_id: userId },
+            headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           }
         );
         console.log("Watchlist item response:", response.data);
         setWatchlistItem(response.data);
 
-        // Fetch full movie data for each movie_id
         const moviePromises = response.data.movie_ids.map((movieId) =>
           axios.get(`http://localhost:5000/movies/${movieId}`, {
+            headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           })
         );
@@ -46,7 +49,7 @@ function WatchlistSingle() {
     };
 
     fetchWatchlistItem();
-  }, [watchlistId, userId, navigate]);
+  }, [watchlistId, userId, navigate, token, authenticated]);
 
   const handleRemoveMovie = async (movieIdToRemove) => {
     if (
@@ -59,15 +62,10 @@ function WatchlistSingle() {
     try {
       const response = await axios.put(
         `http://localhost:5000/watchlists/update/${watchlistId}`,
-        {
-          user_id: userId,
-          remove_movie_id: movieIdToRemove, // Send movie ID to remove
-        },
-        { withCredentials: true }
+        { user_id: userId, remove_movie_id: movieIdToRemove },
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
       console.log("Remove movie response:", response.data);
-
-      // Update local state after successful removal
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
@@ -109,12 +107,14 @@ function WatchlistSingle() {
           <p>No movies in this watchlist yet.</p>
         )}
 
-        <button
-          onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
-          className="bg-yellow-500 text-white p-2 rounded mr-2 mt-4"
-        >
-          Edit Watchlist
-        </button>
+        {authenticated && (
+          <button
+            onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
+            className="bg-yellow-500 text-white p-2 rounded mr-2 mt-4"
+          >
+            Edit Watchlist
+          </button>
+        )}
         <button
           onClick={() => navigate("/watchlist")}
           className="bg-gray-500 text-white p-2 rounded mt-4"

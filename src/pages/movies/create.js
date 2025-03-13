@@ -1,16 +1,48 @@
-import React, { useState } from "react";
+// src/pages/movies/create.jsx
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-function MovieCreate() {
+function MovieCreate({ authenticated }) {
   const [formData, setFormData] = useState({
     id: "",
     movie_title: "",
     movie_genres: "",
   });
-  const userId = localStorage.getItem("userId");
   const [error, setError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || !authenticated) {
+      setError("Please log in to continue");
+      setLoading(false);
+      navigate("/");
+      return;
+    }
+
+    const checkUserRole = async () => {
+      try {
+        const response = await axios.get(
+          "http://127.0.0.1:5000/auth/current-user",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+        setIsAdmin(response.data.role === "admin");
+      } catch (err) {
+        console.error("Failed to fetch current user:", err.response?.data);
+        setError("Please log in to continue");
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkUserRole();
+  }, [navigate, authenticated]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -21,59 +53,72 @@ function MovieCreate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userId) {
-      setError("Please log in to add to watchlist");
-      navigate("/");
+    const token = localStorage.getItem("token");
+    if (!isAdmin || !authenticated) {
+      setError("Only admins can create movies");
       return;
     }
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/watchlists/create",
-        { ...formData, user_id: userId },
-        { withCredentials: true }
+        "http://127.0.0.1:5000/movies/create",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
-      console.log("Watchlist create response:", response.data);
-      setFormData({ movie_id: "", title: "" });
-      navigate("/watchlist");
+      console.log("Movie create response:", response.data);
+      setFormData({ id: "", movie_title: "", movie_genres: "" });
+      setError("");
+      navigate("/movies");
     } catch (err) {
-      console.error("Watchlist create error:", err.response?.data);
-      setError(err.response?.data?.error || "Failed to add to watchlist");
+      console.error("Movie create error:", err.response?.data);
+      setError(err.response?.data?.error || "Failed to create movie");
     }
   };
+
+  if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
   return (
     <div className="container mx-auto mt-10">
       <h2 className="text-2xl mb-4">Create New Movie</h2>
       {error && <p className="text-red-500">{error}</p>}
-      <form onSubmit={handleSubmit} className="mb-6">
-        <input
-          type="text"
-          name="id"
-          placeholder="Movie ID (e.g., tt1234567)"
-          value={formData.id}
-          onChange={handleChange}
-          className="p-2 border rounded mr-2"
-        />
-        <input
-          type="text"
-          name="movie_title"
-          placeholder="Movie Title"
-          value={formData.movie_title}
-          onChange={handleChange}
-          className="p-2 border rounded mr-2"
-        />
-        <input
-          type="text"
-          name="movie_genres"
-          placeholder="Genres (comma-separated)"
-          value={formData.movie_genres}
-          onChange={handleChange}
-          className="p-2 border rounded mr-2"
-        />
-        <button type="submit" className="bg-green-500 text-white p-2 rounded">
-          Create Movie
-        </button>
-      </form>
+      {!isAdmin || !authenticated ? (
+        <p className="text-red-500">
+          You must be an admin to create movies. Please log in with an admin
+          account.
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="mb-6">
+          <input
+            type="text"
+            name="id"
+            placeholder="Movie ID (e.g., tt1234567)"
+            value={formData.id}
+            onChange={handleChange}
+            className="p-2 border rounded mr-2"
+            required
+          />
+          <input
+            type="text"
+            name="movie_title"
+            placeholder="Movie Title"
+            value={formData.movie_title}
+            onChange={handleChange}
+            className="p-2 border rounded mr-2"
+            required
+          />
+          <input
+            type="text"
+            name="movie_genres"
+            placeholder="Genres (comma-separated)"
+            value={formData.movie_genres}
+            onChange={handleChange}
+            className="p-2 border rounded mr-2"
+            required
+          />
+          <button type="submit" className="bg-green-500 text-white p-2 rounded">
+            Create Movie
+          </button>
+        </form>
+      )}
       <button
         onClick={() => navigate("/movies")}
         className="bg-gray-500 text-white p-2 rounded"

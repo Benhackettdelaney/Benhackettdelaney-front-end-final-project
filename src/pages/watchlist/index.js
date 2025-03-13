@@ -1,17 +1,25 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
-function Watchlist() {
+function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token"); // Get token from localStorage
   const navigate = useNavigate();
 
   const fetchWatchlist = useCallback(async () => {
+    if (!token || !authenticated) {
+      setError("Please log in to view your watchlist");
+      navigate("/");
+      return;
+    }
     try {
       const response = await axios.get("http://localhost:5000/watchlists", {
         params: { user_id: userId },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log("Watchlist response:", response.data);
@@ -20,21 +28,16 @@ function Watchlist() {
       const errorData = err.response?.data || "Unknown error";
       console.error("Watchlist fetch error:", JSON.stringify(errorData));
       setError(errorData.error || "Failed to fetch watchlist");
-      if (err.response?.status === 400) {
-        setError("Invalid or missing user_id. Please log in again.");
+      if (err.response?.status === 401 || err.response?.status === 400) {
+        setError("Invalid or missing authentication. Please log in again.");
         navigate("/");
       }
     }
-  }, [navigate, userId]);
+  }, [navigate, userId, token, authenticated]);
 
   useEffect(() => {
-    if (!userId) {
-      setError("Please log in to view your watchlist");
-      navigate("/");
-      return;
-    }
     fetchWatchlist();
-  }, [userId, navigate, fetchWatchlist]);
+  }, [fetchWatchlist]);
 
   const handleDeleteWatchlist = async (watchlistId) => {
     if (
@@ -49,11 +52,11 @@ function Watchlist() {
         `http://localhost:5000/watchlists/delete/${watchlistId}`,
         {
           params: { user_id: userId },
+          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         }
       );
       console.log("Delete watchlist response:", response.data);
-      // Update local state to remove the deleted watchlist
       setWatchlist((prev) => prev.filter((item) => item.id !== watchlistId));
     } catch (err) {
       setError(err.response?.data?.error || "Failed to delete watchlist");
@@ -64,14 +67,16 @@ function Watchlist() {
     <div className="container mx-auto mt-10">
       <h2 className="text-2xl mb-4">My Watchlists</h2>
       {error && <p className="text-red-500">{error}</p>}
-      <div className="mb-4">
-        <Link
-          to="/watchlist/create"
-          className="bg-green-500 text-white p-2 rounded inline-block"
-        >
-          Create Watchlist
-        </Link>
-      </div>
+      {authenticated && (
+        <div className="mb-4">
+          <Link
+            to="/watchlist/create"
+            className="bg-green-500 text-white p-2 rounded inline-block"
+          >
+            Create Watchlist
+          </Link>
+        </div>
+      )}
       <ul className="space-y-4">
         {watchlist.map((item) => (
           <li

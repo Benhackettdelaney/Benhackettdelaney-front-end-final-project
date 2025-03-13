@@ -1,76 +1,83 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 
-function Login() {
-  const [formData, setFormData] = useState({
+import axios from "axios";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const Login = ({ authenticated, onAuthenticated }) => {
+  const errStyle = { color: "red" };
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
     email: "",
     password: "",
   });
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [errMessage, setErrMessage] = useState("");
+
+  const handleClick = () => {
+    axios
+      .post(
+        `http://127.0.0.1:5000/auth/login`,
+        {
+          email: form.email,
+          password: form.password,
+        },
+        { withCredentials: true }
+      )
+      .then((response) => {
+        console.log("Login response:", response.data);
+        onAuthenticated(true, {
+          token: response.data.access_token,
+          userId: response.data.user_id,
+        });
+        navigate("/home");
+      })
+      .catch((err) => {
+        console.error("Error:", err.response?.data || err.message);
+        setErrMessage(err.response?.data?.error || "Login failed");
+      });
+  };
 
   const handleForm = (e) => {
-    setFormData((prevState) => ({
+    setForm((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/auth/login",
-        formData,
-        {
-          withCredentials: true,
-        }
-      );
-      const userId = response.data.user_id;
-      localStorage.setItem("userId", userId);
-      navigate("/home");
-    } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
-    }
-  };
-
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl mb-4">Login</h2>
-      {error && <p className="text-red-500">{error}</p>}
-      <form onSubmit={handleSubmit}>
+    <div className="lg-center container place-content-center">
+      <div className="text-center lg-center cover-full bg-blue-200 pb-4 pt-4">
+        <h2 className="text-4xl text-white">User Login</h2>
+      </div>
+      <div className="flex flex-col items-center space-y-8 mt-12">
         <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
           onChange={handleForm}
-          className="w-full p-2 mb-4 border rounded"
+          type="text"
+          name="email"
+          value={form.email}
+          placeholder="Email"
+          className="input input-bordered w-full max-w-xs"
         />
         <input
+          onChange={handleForm}
           type="password"
           name="password"
+          value={form.password}
           placeholder="Password"
-          value={formData.password}
-          onChange={handleForm}
-          className="w-full p-2 mb-4 border rounded"
+          className="input input-bordered w-full max-w-xs"
         />
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white p-2 rounded"
-        >
-          Login
+        <button className="btn btn-active" onClick={handleClick}>
+          Submit
         </button>
-      </form>
-      <p className="mt-4 text-center">
-        Don't have an account?{" "}
-        <Link to="/register" className="text-blue-500">
-          Register here
-        </Link>
-      </p>
+        <p style={errStyle}>{errMessage}</p>
+        <div>
+          <Link className="underline text-blue-500" to="/register">
+            Don't have an account? Register here.
+          </Link>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default Login;

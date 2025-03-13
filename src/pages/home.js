@@ -1,16 +1,20 @@
+// src/pages/home.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom"; // Add Link for navigation
+import { useNavigate, Link } from "react-router-dom";
+import SignOut from "../components/signOut"; 
 
-function Home() {
+function Home({ authenticated, onLogout }) {
+  // Rename onLogout to onAuthenticated
   const [topMovies, setTopMovies] = useState([]);
   const [userRatings, setUserRatings] = useState([]);
   const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !authenticated || !token) {
       setError("Please log in to see your movie recommendations and ratings");
       navigate("/");
       return;
@@ -20,6 +24,7 @@ function Home() {
       try {
         const response = await axios.get("http://127.0.0.1:5000/ranking", {
           params: { user_id: userId },
+          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
         console.log("Top movies response:", response.data);
@@ -34,30 +39,43 @@ function Home() {
       try {
         const response = await axios.get("http://127.0.0.1:5000/ratings", {
           params: { user_id: userId },
+          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
         console.log("User ratings response:", response.data);
         setUserRatings(response.data.rated_movies);
       } catch (err) {
         console.error("Error fetching user ratings:", err.response?.data);
+        setError(err.response?.data?.error || "Failed to fetch user ratings");
       }
     };
 
     fetchTopMovies();
     fetchUserRatings();
-  }, [userId, navigate]);
+  }, [userId, navigate, authenticated, token]);
 
   return (
     <div className="container mx-auto mt-10">
-      {/* Button to Watchlists All */}
-      <div className="mb-6">
-        <Link
-          to="/watchlist"
-          className="bg-blue-500 text-white p-2 rounded inline-block"
-        >
-          View All Watchlists
-        </Link>
-      </div>
+      {/* Navigation Buttons */}
+      {authenticated && (
+        <div className="mb-6 flex space-x-4 justify-between items-center">
+          <div className="flex space-x-4">
+            <Link
+              to="/watchlist"
+              className="bg-blue-500 text-white p-2 rounded inline-block"
+            >
+              View All Watchlists
+            </Link>
+            <Link
+              to="/movies"
+              className="bg-blue-500 text-white p-2 rounded inline-block"
+            >
+              Movies All
+            </Link>
+          </div>
+          <SignOut onAuthenticated={onLogout} /> {/* Use SignOut component */}
+        </div>
+      )}
 
       <section className="mb-10">
         <h2 className="text-2xl mb-4">Recommended Movies</h2>
