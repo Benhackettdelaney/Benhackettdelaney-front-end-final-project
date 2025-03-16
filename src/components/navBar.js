@@ -14,10 +14,7 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
   }
 
   return (
-    <div
-      className="bg-gray-800 text-white p-4 flex justify-between items-center"
-      data-navbar="main"
-    >
+    <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
       <div className="flex space-x-4">
         <Link to="/home" className="hover:underline">
           Home
@@ -30,6 +27,9 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
         </Link>
         <Link to="/profile" className="hover:underline">
           Profile
+        </Link>
+        <Link to="/public-watchlists" className="hover:underline">
+          Public Watchlists
         </Link>
       </div>
       <div className="flex items-center space-x-4">

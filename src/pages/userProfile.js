@@ -1,8 +1,7 @@
-// src/pages/userProfile.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import SignOut from "../components/signOut"; // Matches your lowercase filename
+import SignOut from "../components/signOut"; 
 
 function Profile({ authenticated, onAuthenticated }) {
   const [userData, setUserData] = useState(null);
@@ -82,9 +81,6 @@ function Profile({ authenticated, onAuthenticated }) {
         </p>
         <p>
           <strong>Gender:</strong> {gender}
-        </p>
-        <p>
-          <strong>Occupation Label:</strong> {userData.user_occupation_label}
         </p>
         <p>
           <strong>User Rating:</strong> {userData.user_rating.toFixed(2)}

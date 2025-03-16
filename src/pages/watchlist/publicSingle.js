@@ -10,6 +10,7 @@ function WatchlistSingle({ authenticated }) {
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   const [error, setError] = useState("");
+  const [newMovieId, setNewMovieId] = useState(""); // State for adding a movie
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +72,7 @@ function WatchlistSingle({ authenticated }) {
         movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
       }));
       setMovies((prev) => prev.filter((movie) => movie.id !== movieIdToRemove));
+      setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
     }
@@ -78,10 +80,13 @@ function WatchlistSingle({ authenticated }) {
 
   const handleToggleVisibility = async () => {
     const newVisibility = !watchlistItem.is_public;
+    const payload = { user_id: userId, is_public: newVisibility };
+    console.log("Toggling visibility with payload:", payload);
+
     try {
       const response = await axios.put(
         `http://localhost:5000/watchlists/update/${watchlistId}`,
-        { user_id: userId, is_public: newVisibility },
+        payload,
         { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
       console.log("Toggle visibility response:", response.data);
@@ -89,9 +94,51 @@ function WatchlistSingle({ authenticated }) {
         ...prev,
         is_public: newVisibility,
       }));
+      setError("");
       alert(`Watchlist is now ${newVisibility ? "public" : "private"}!`);
     } catch (err) {
+      console.error("Toggle visibility error:", err.response?.data);
       setError(err.response?.data?.error || "Failed to update visibility");
+    }
+  };
+
+  const handleAddMovie = async () => {
+    if (!newMovieId) {
+      setError("Please enter a movie ID to add.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/watchlists/update/${watchlistId}`,
+        { user_id: userId, movie_id: newMovieId },
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
+      console.log("Add movie response:", response.data);
+
+      // Fetch the added movie's details
+      const movieResponse = await axios.get(
+        `http://localhost:5000/movies/${newMovieId}`,
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
+      const newMovie = movieResponse.data;
+
+      setWatchlistItem((prev) => ({
+        ...prev,
+        movie_ids: [...prev.movie_ids, newMovieId],
+      }));
+      setMovies((prev) => [...prev, newMovie]);
+      setNewMovieId(""); // Clear input
+      setError("");
+    } catch (err) {
+      console.error("Add movie error:", err.response?.data);
+      if (err.response?.status === 409) {
+        setError("This movie is already in the watchlist.");
+      } else if (err.response?.status === 404) {
+        setError("Movie not found.");
+      } else {
+        setError(err.response?.data?.error || "Failed to add movie");
+      }
     }
   };
 
@@ -135,6 +182,25 @@ function WatchlistSingle({ authenticated }) {
           </ul>
         ) : (
           <p>No movies in this watchlist yet.</p>
+        )}
+
+        {/* Add Movie Input */}
+        {authenticated && (
+          <div className="mt-4">
+            <input
+              type="text"
+              value={newMovieId}
+              onChange={(e) => setNewMovieId(e.target.value)}
+              placeholder="Enter Movie ID to add"
+              className="p-2 border rounded mr-2"
+            />
+            <button
+              onClick={handleAddMovie}
+              className="bg-green-500 text-white p-2 rounded"
+            >
+              Add Movie
+            </button>
+          </div>
         )}
 
         {authenticated && (
