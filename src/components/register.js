@@ -1,10 +1,10 @@
-// src/components/Register.jsx
 import axios from "axios";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react"; 
+import { Link, useNavigate } from "react-router-dom";
 
 const Register = ({ authenticated, onAuthenticated }) => {
   const errStyle = { color: "red" };
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     username: "",
@@ -16,13 +16,18 @@ const Register = ({ authenticated, onAuthenticated }) => {
   });
   const [errMessage, setErrMessage] = useState("");
 
+  useEffect(() => {
+    if (authenticated) {
+      navigate("/home");
+    }
+  }, [authenticated, navigate]);
+
   const handleClick = () => {
     axios
       .post(
         `http://127.0.0.1:5000/auth/register`,
         {
           username: form.username,
-
           email: form.email,
           password: form.password,
           user_gender: parseInt(form.user_gender),
@@ -33,7 +38,13 @@ const Register = ({ authenticated, onAuthenticated }) => {
       )
       .then((response) => {
         console.log("Registration response:", response.data);
-        onAuthenticated(true, response.data.access_token); // Set token and auth state
+        const authData = {
+          token: response.data.access_token,
+          userId: response.data.user_id,
+          role: "user",
+        };
+        onAuthenticated(true, authData);
+        navigate("/home");
       })
       .catch((err) => {
         console.error("Error:", err.response?.data || err.message);
@@ -61,6 +72,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.username}
           placeholder="Username"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <input
           onChange={handleForm}
@@ -69,6 +81,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.email}
           placeholder="Email"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <input
           onChange={handleForm}
@@ -77,6 +90,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.password}
           placeholder="Password (min 8 chars)"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <input
           onChange={handleForm}
@@ -85,6 +99,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.user_gender}
           placeholder="Gender (0 or 1)"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <input
           onChange={handleForm}
@@ -93,6 +108,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.user_occupation_label}
           placeholder="Occupation Label (e.g., 1)"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <input
           onChange={handleForm}
@@ -101,6 +117,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
           value={form.raw_user_age}
           placeholder="Age (e.g., 25)"
           className="input input-bordered w-full max-w-xs"
+          required
         />
         <button className="btn btn-active" onClick={handleClick}>
           Submit

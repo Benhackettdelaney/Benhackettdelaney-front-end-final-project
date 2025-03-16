@@ -1,4 +1,3 @@
-// src/pages/movies/edit.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,6 +7,7 @@ function MovieEdit({ authenticated }) {
   const [formData, setFormData] = useState({
     movie_title: "",
     movie_genres: "",
+    description: "", 
   });
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -29,7 +29,6 @@ function MovieEdit({ authenticated }) {
           "http://127.0.0.1:5000/auth/current-user",
           {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           }
         );
         setIsAdmin(userResponse.data.role === "admin");
@@ -38,12 +37,12 @@ function MovieEdit({ authenticated }) {
           `http://127.0.0.1:5000/movies/${movieId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           }
         );
         setFormData({
           movie_title: movieResponse.data.movie_title,
           movie_genres: movieResponse.data.movie_genres,
+          description: movieResponse.data.description || "", 
         });
       } catch (err) {
         console.error("Error:", err.response?.data);
@@ -82,7 +81,7 @@ function MovieEdit({ authenticated }) {
       await axios.put(
         `http://127.0.0.1:5000/movies/update/${movieId}`,
         formData,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setError("");
       navigate("/movies");
@@ -104,14 +103,14 @@ function MovieEdit({ authenticated }) {
           account.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={handleSubmit} className="mb-6 space-y-4">
           <input
             type="text"
             name="movie_title"
             placeholder="Movie Title"
             value={formData.movie_title}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-2 border rounded w-full max-w-md"
             required
           />
           <input
@@ -120,8 +119,15 @@ function MovieEdit({ authenticated }) {
             placeholder="Genres (comma-separated)"
             value={formData.movie_genres}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-2 border rounded w-full max-w-md"
             required
+          />
+          <textarea
+            name="description"
+            placeholder="Description (optional)"
+            value={formData.description}
+            onChange={handleChange}
+            className="p-2 border rounded w-full max-w-md h-24"
           />
           <button type="submit" className="bg-green-500 text-white p-2 rounded">
             Update Movie

@@ -1,6 +1,5 @@
-
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react"; 
 import { Link, useNavigate } from "react-router-dom";
 
 const Login = ({ authenticated, onAuthenticated }) => {
@@ -12,6 +11,12 @@ const Login = ({ authenticated, onAuthenticated }) => {
     password: "",
   });
   const [errMessage, setErrMessage] = useState("");
+
+  useEffect(() => {
+    if (authenticated) {
+      navigate("/home");
+    }
+  }, [authenticated, navigate]);
 
   const handleClick = () => {
     axios
@@ -28,6 +33,7 @@ const Login = ({ authenticated, onAuthenticated }) => {
         onAuthenticated(true, {
           token: response.data.access_token,
           userId: response.data.user_id,
+          role: response.data.role,
         });
         navigate("/home");
       })

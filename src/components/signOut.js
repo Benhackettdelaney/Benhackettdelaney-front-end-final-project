@@ -12,7 +12,8 @@ function SignOut({ onAuthenticated }) {
       .then(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        console.log("Token and UserId removed from localStorage");
+        localStorage.removeItem("role");
+        console.log("Token, UserId, and Role removed from localStorage");
 
         if (onAuthenticated) {
           onAuthenticated(false);

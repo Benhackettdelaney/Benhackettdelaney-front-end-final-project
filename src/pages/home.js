@@ -1,16 +1,15 @@
 // src/pages/home.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
-import SignOut from "../components/signOut"; 
+import { useNavigate } from "react-router-dom";
 
-function Home({ authenticated, onLogout }) {
-  // Rename onLogout to onAuthenticated
+function Home({ authenticated, onAuthenticated }) {
   const [topMovies, setTopMovies] = useState([]);
   const [userRatings, setUserRatings] = useState([]);
   const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +24,6 @@ function Home({ authenticated, onLogout }) {
         const response = await axios.get("http://127.0.0.1:5000/ranking", {
           params: { user_id: userId },
           headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
         });
         console.log("Top movies response:", response.data);
         setTopMovies(response.data.top_ranked_movies);
@@ -40,7 +38,6 @@ function Home({ authenticated, onLogout }) {
         const response = await axios.get("http://127.0.0.1:5000/ratings", {
           params: { user_id: userId },
           headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
         });
         console.log("User ratings response:", response.data);
         setUserRatings(response.data.rated_movies);
@@ -56,30 +53,12 @@ function Home({ authenticated, onLogout }) {
 
   return (
     <div className="container mx-auto mt-10">
-      {/* Navigation Buttons */}
-      {authenticated && (
-        <div className="mb-6 flex space-x-4 justify-between items-center">
-          <div className="flex space-x-4">
-            <Link
-              to="/watchlist"
-              className="bg-blue-500 text-white p-2 rounded inline-block"
-            >
-              View All Watchlists
-            </Link>
-            <Link
-              to="/movies"
-              className="bg-blue-500 text-white p-2 rounded inline-block"
-            >
-              Movies All
-            </Link>
-          </div>
-          <SignOut onAuthenticated={onLogout} /> {/* Use SignOut component */}
-        </div>
-      )}
-
       <section className="mb-10">
-        <h2 className="text-2xl mb-4">Recommended Movies</h2>
+        <h2 className="text-2xl mb-4">
+          Welcome, {role ? `${role} User` : "User"}!
+        </h2>
         {error && <p className="text-red-500 mb-4">{error}</p>}
+        <h3 className="text-xl mb-2">Recommended Movies</h3>
         {topMovies.length === 0 && !error ? (
           <p>Loading recommended movies...</p>
         ) : (
@@ -100,7 +79,7 @@ function Home({ authenticated, onLogout }) {
       </section>
 
       <section>
-        <h2 className="text-2xl mb-4">Top Ratings</h2>
+        <h3 className="text-xl mb-4">Top Ratings</h3>
         {userRatings.length === 0 ? (
           <p>You haven’t rated any movies yet.</p>
         ) : (

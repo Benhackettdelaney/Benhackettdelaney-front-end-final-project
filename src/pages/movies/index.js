@@ -1,16 +1,26 @@
-// src/pages/movies/All.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-function All({ authenticated }) {
-  // Add authenticated prop
+function All({ authenticated, search }) {
   const [movies, setMovies] = useState([]);
+  const [filteredMovies, setFilteredMovies] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchMovies();
   }, []);
+
+  useEffect(() => {
+    if (!search || search.length <= 1) {
+      setFilteredMovies(movies);
+    } else {
+      const filtered = movies.filter((movie) =>
+        movie.movie_title.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredMovies(filtered);
+    }
+  }, [movies, search]);
 
   const fetchMovies = async () => {
     const token = localStorage.getItem("token");
@@ -23,9 +33,9 @@ function All({ authenticated }) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        withCredentials: true,
       });
       setMovies(response.data);
+      setFilteredMovies(response.data);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to fetch movies");
     }
@@ -44,7 +54,7 @@ function All({ authenticated }) {
         </Link>
       )}
       <ul className="space-y-4">
-        {movies.map((movie) => (
+        {filteredMovies.map((movie) => (
           <li key={movie.id} className="p-4 bg-white rounded shadow">
             <p>
               <Link

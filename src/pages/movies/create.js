@@ -8,6 +8,7 @@ function MovieCreate({ authenticated }) {
     id: "",
     movie_title: "",
     movie_genres: "",
+    description: "", 
   });
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -29,7 +30,6 @@ function MovieCreate({ authenticated }) {
           "http://127.0.0.1:5000/auth/current-user",
           {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           }
         );
         setIsAdmin(response.data.role === "admin");
@@ -62,10 +62,15 @@ function MovieCreate({ authenticated }) {
       const response = await axios.post(
         "http://127.0.0.1:5000/movies/create",
         formData,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("Movie create response:", response.data);
-      setFormData({ id: "", movie_title: "", movie_genres: "" });
+      setFormData({
+        id: "",
+        movie_title: "",
+        movie_genres: "",
+        description: "",
+      }); // Reset description too
       setError("");
       navigate("/movies");
     } catch (err) {
@@ -86,14 +91,14 @@ function MovieCreate({ authenticated }) {
           account.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={handleSubmit} className="mb-6 space-y-4">
           <input
             type="text"
             name="id"
             placeholder="Movie ID (e.g., tt1234567)"
             value={formData.id}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-2 border rounded w-full max-w-md"
             required
           />
           <input
@@ -102,7 +107,7 @@ function MovieCreate({ authenticated }) {
             placeholder="Movie Title"
             value={formData.movie_title}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-2 border rounded w-full max-w-md"
             required
           />
           <input
@@ -111,8 +116,15 @@ function MovieCreate({ authenticated }) {
             placeholder="Genres (comma-separated)"
             value={formData.movie_genres}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-2 border rounded w-full max-w-md"
             required
+          />
+          <textarea
+            name="description"
+            placeholder="Description (optional)"
+            value={formData.description}
+            onChange={handleChange}
+            className="p-2 border rounded w-full max-w-md h-24"
           />
           <button type="submit" className="bg-green-500 text-white p-2 rounded">
             Create Movie
