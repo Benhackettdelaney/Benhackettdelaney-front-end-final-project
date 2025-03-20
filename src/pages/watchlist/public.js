@@ -1,7 +1,6 @@
-// src/pages/PublicWatchlists.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { fetchPublicWatchlists } from "../../apis/watchlist";
 
 function PublicWatchlists() {
   const [watchlists, setWatchlists] = useState([]);
@@ -9,13 +8,10 @@ function PublicWatchlists() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPublicWatchlists = async () => {
+    const loadPublicWatchlists = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:5000/watchlists/public"
-        ); // Assuming prefix /watchlists
-        console.log("Public watchlists response:", response.data);
-        setWatchlists(response.data);
+        const watchlistData = await fetchPublicWatchlists();
+        setWatchlists(watchlistData);
       } catch (err) {
         console.error("Error fetching public watchlists:", err.response?.data);
         setError(
@@ -26,7 +22,7 @@ function PublicWatchlists() {
       }
     };
 
-    fetchPublicWatchlists();
+    loadPublicWatchlists();
   }, []);
 
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;

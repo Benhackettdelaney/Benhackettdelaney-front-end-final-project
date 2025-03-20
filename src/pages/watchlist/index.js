@@ -1,43 +1,37 @@
-
+// src/pages/watchlist/index.jsx (or Watchlist.jsx)
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { fetchWatchlists, deleteWatchlist } from "../../apis/watchlist";
 
 function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
-  const token = localStorage.getItem("token"); // Get token from localStorage
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  const fetchWatchlist = useCallback(async () => {
+  const fetchWatchlistData = useCallback(async () => {
     if (!token || !authenticated) {
       setError("Please log in to view your watchlist");
-      navigate("/");
+      navigate("/"); // Redirect to login, not home
       return;
     }
     try {
-      const response = await axios.get("http://localhost:5000/watchlists", {
-        params: { user_id: userId },
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
-      console.log("Watchlist response:", response.data);
-      setWatchlist(response.data);
+      const watchlistData = await fetchWatchlists(userId, token);
+      setWatchlist(watchlistData);
     } catch (err) {
-      const errorData = err.response?.data || "Unknown error";
-      console.error("Watchlist fetch error:", JSON.stringify(errorData));
-      setError(errorData.error || "Failed to fetch watchlist");
+      console.error("Watchlist fetch error:", err.response?.data);
+      setError(err.response?.data?.error || "Failed to fetch watchlist");
       if (err.response?.status === 401 || err.response?.status === 400) {
         setError("Invalid or missing authentication. Please log in again.");
-        navigate("/");
+        navigate("/"); // Redirect to login
       }
     }
   }, [navigate, userId, token, authenticated]);
 
   useEffect(() => {
-    fetchWatchlist();
-  }, [fetchWatchlist]);
+    fetchWatchlistData();
+  }, [fetchWatchlistData]);
 
   const handleDeleteWatchlist = async (watchlistId) => {
     if (
@@ -48,15 +42,7 @@ function Watchlist({ authenticated }) {
       return;
 
     try {
-      const response = await axios.delete(
-        `http://localhost:5000/watchlists/delete/${watchlistId}`,
-        {
-          params: { user_id: userId },
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
-      console.log("Delete watchlist response:", response.data);
+      await deleteWatchlist(watchlistId, userId, token);
       setWatchlist((prev) => prev.filter((item) => item.id !== watchlistId));
     } catch (err) {
       setError(err.response?.data?.error || "Failed to delete watchlist");

@@ -1,16 +1,16 @@
-// src/pages/watchlist/single.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
+import { fetchMovie } from "../../apis/movie";
 
-function WatchlistSingle({ authenticated }) {
+function PublicWatchlistSingle({ authenticated }) {
   const { watchlistId } = useParams();
   const [watchlistItem, setWatchlistItem] = useState(null);
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState("");
+  const [newMovieId, setNewMovieId] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const [error, setError] = useState("");
-  const [newMovieId, setNewMovieId] = useState(""); // State for adding a movie
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,28 +20,15 @@ function WatchlistSingle({ authenticated }) {
       return;
     }
 
-    const fetchWatchlistItem = async () => {
+    const loadWatchlist = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/watchlists/${watchlistId}`,
-          {
-            params: { user_id: userId },
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-        console.log("Watchlist item response:", response.data);
-        setWatchlistItem(response.data);
+        const watchlistData = await fetchWatchlist(watchlistId, userId, token);
+        setWatchlistItem(watchlistData);
 
-        const moviePromises = response.data.movie_ids.map((movieId) =>
-          axios.get(`http://localhost:5000/movies/${movieId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          })
+        const moviePromises = watchlistData.movie_ids.map((movieId) =>
+          fetchMovie(movieId, token)
         );
-        const movieResponses = await Promise.all(moviePromises);
-        const movieData = movieResponses.map((res) => res.data);
-        console.log("Movie data:", movieData);
+        const movieData = await Promise.all(moviePromises);
         setMovies(movieData);
       } catch (err) {
         console.error("Fetch watchlist error:", err.response?.data);
@@ -49,7 +36,7 @@ function WatchlistSingle({ authenticated }) {
       }
     };
 
-    fetchWatchlistItem();
+    loadWatchlist();
   }, [watchlistId, userId, navigate, token, authenticated]);
 
   const handleRemoveMovie = async (movieIdToRemove) => {
@@ -61,12 +48,11 @@ function WatchlistSingle({ authenticated }) {
       return;
 
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${watchlistId}`,
+      await updateWatchlist(
+        watchlistId,
         { user_id: userId, remove_movie_id: movieIdToRemove },
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        token
       );
-      console.log("Remove movie response:", response.data);
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
@@ -80,16 +66,12 @@ function WatchlistSingle({ authenticated }) {
 
   const handleToggleVisibility = async () => {
     const newVisibility = !watchlistItem.is_public;
-    const payload = { user_id: userId, is_public: newVisibility };
-    console.log("Toggling visibility with payload:", payload);
-
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${watchlistId}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      await updateWatchlist(
+        watchlistId,
+        { user_id: userId, is_public: newVisibility },
+        token
       );
-      console.log("Toggle visibility response:", response.data);
       setWatchlistItem((prev) => ({
         ...prev,
         is_public: newVisibility,
@@ -109,26 +91,18 @@ function WatchlistSingle({ authenticated }) {
     }
 
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${watchlistId}`,
+      await updateWatchlist(
+        watchlistId,
         { user_id: userId, movie_id: newMovieId },
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        token
       );
-      console.log("Add movie response:", response.data);
-
-      // Fetch the added movie's details
-      const movieResponse = await axios.get(
-        `http://localhost:5000/movies/${newMovieId}`,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
-      );
-      const newMovie = movieResponse.data;
-
+      const newMovie = await fetchMovie(newMovieId, token);
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: [...prev.movie_ids, newMovieId],
       }));
       setMovies((prev) => [...prev, newMovie]);
-      setNewMovieId(""); // Clear input
+      setNewMovieId("");
       setError("");
     } catch (err) {
       console.error("Add movie error:", err.response?.data);
@@ -184,7 +158,6 @@ function WatchlistSingle({ authenticated }) {
           <p>No movies in this watchlist yet.</p>
         )}
 
-        {/* Add Movie Input */}
         {authenticated && (
           <div className="mt-4">
             <input
@@ -222,4 +195,4 @@ function WatchlistSingle({ authenticated }) {
   );
 }
 
-export default WatchlistSingle;
+export default PublicWatchlistSingle;

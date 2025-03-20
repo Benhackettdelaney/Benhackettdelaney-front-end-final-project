@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import axios from "axios"; 
+import "./index.css";
+import axios from "axios";
 import Login from "./components/login";
 import Register from "./components/register";
 import All from "./pages/movies";
@@ -14,7 +15,7 @@ import WatchlistEdit from "./pages/watchlist/edit";
 import PageNotFound from "./pages/pageNotFound";
 import Home from "./pages/home";
 import Profile from "./pages/userProfile";
-import Navbar from "./components/navBar";
+import Navbar from "./components/navBar"; 
 import PublicWatchlists from "./pages/watchlist/public";
 import PublicWatchlistSingle from "./pages/watchlist/publicSingle";
 
@@ -99,7 +100,9 @@ function App() {
         search={search}
         onHandleChange={onHandleChange}
       />
-      <div>
+      <div className="min-h-screen bg-base-200">
+        {" "}
+        {/* Added DaisyUI background */}
         <Routes>
           <Route
             path="/register"

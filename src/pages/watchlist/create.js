@@ -1,13 +1,13 @@
 // src/pages/watchlist/create.jsx
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { createWatchlist } from "../../apis/watchlist";
 
 function WatchlistCreate({ authenticated }) {
   const [formData, setFormData] = useState({ movie_id: "", title: "" });
+  const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -20,26 +20,27 @@ function WatchlistCreate({ authenticated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userId || !token || !authenticated) {
+      console.log("Auth failure: ", { userId, token, authenticated });
       setError("Please log in to create a watchlist");
-      navigate("/");
+      navigate("/"); // Redirect to login
       return;
     }
     try {
-      const requestData = {
-        ...formData,
-        user_id: userId,
-      };
-      const response = await axios.post(
-        "http://127.0.0.1:5000/watchlists/create",
-        requestData,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
-      );
-      console.log("Watchlist create response:", response.data);
+      console.log("Submitting watchlist:", { formData, userId, token });
+      const requestData = { ...formData, user_id: userId };
+      await createWatchlist(requestData, token);
       setFormData({ movie_id: "", title: "" });
-      navigate("/watchlist");
+      setError("");
+      navigate("/watchlist"); // Redirect to watchlist index
     } catch (err) {
-      console.error("Watchlist create error:", err.response?.data);
+      console.error(
+        "Watchlist create error:",
+        err.response?.data || err.message
+      );
       setError(err.response?.data?.error || "Failed to create watchlist");
+      if (err.response?.status === 401) {
+        navigate("/"); // Redirect to login on auth failure
+      }
     }
   };
 

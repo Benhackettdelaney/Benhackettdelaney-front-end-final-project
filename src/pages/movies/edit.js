@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchCurrentUser, fetchMovie, updateMovie } from "../../apis/movie";
 
 function MovieEdit({ authenticated }) {
   const { movieId } = useParams();
   const [formData, setFormData] = useState({
     movie_title: "",
     movie_genres: "",
-    description: "", 
+    description: "",
   });
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!token || !authenticated) {
       setError("Please log in to continue");
       setLoading(false);
@@ -23,26 +23,23 @@ function MovieEdit({ authenticated }) {
       return;
     }
 
+    if (!movieId) {
+      setError("No movie ID provided");
+      setLoading(false);
+      navigate("/movies");
+      return;
+    }
+
     const checkUserRoleAndFetchMovie = async () => {
       try {
-        const userResponse = await axios.get(
-          "http://127.0.0.1:5000/auth/current-user",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setIsAdmin(userResponse.data.role === "admin");
+        const userData = await fetchCurrentUser(token);
+        setIsAdmin(userData.role === "admin");
 
-        const movieResponse = await axios.get(
-          `http://127.0.0.1:5000/movies/${movieId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const movieData = await fetchMovie(movieId, token);
         setFormData({
-          movie_title: movieResponse.data.movie_title,
-          movie_genres: movieResponse.data.movie_genres,
-          description: movieResponse.data.description || "", 
+          movie_title: movieData.movie_title,
+          movie_genres: movieData.movie_genres,
+          description: movieData.description || "",
         });
       } catch (err) {
         console.error("Error:", err.response?.data);
@@ -53,15 +50,8 @@ function MovieEdit({ authenticated }) {
       }
     };
 
-    if (!movieId) {
-      setError("No movie ID provided");
-      setLoading(false);
-      navigate("/movies");
-      return;
-    }
-
     checkUserRoleAndFetchMovie();
-  }, [movieId, navigate, authenticated]);
+  }, [movieId, navigate, authenticated, token]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -72,17 +62,12 @@ function MovieEdit({ authenticated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
     if (!isAdmin || !authenticated) {
       setError("Only admins can edit movies");
       return;
     }
     try {
-      await axios.put(
-        `http://127.0.0.1:5000/movies/update/${movieId}`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await updateMovie(movieId, formData, token);
       setError("");
       navigate("/movies");
     } catch (err) {

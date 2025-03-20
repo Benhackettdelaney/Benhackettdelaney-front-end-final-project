@@ -1,14 +1,13 @@
-// src/pages/watchlist/edit.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
 
 function WatchlistEdit({ authenticated }) {
   const { watchlistId } = useParams();
   const [formData, setFormData] = useState({ title: "" });
+  const [error, setError] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,23 +17,16 @@ function WatchlistEdit({ authenticated }) {
       return;
     }
 
-    const fetchWatchlistItem = async () => {
+    const loadWatchlist = async () => {
       try {
-        const response = await axios.get(
-          `http://127.0.0.1:5000/watchlists/${watchlistId}`,
-          {
-            params: { user_id: userId },
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-        setFormData({ title: response.data.title });
+        const watchlistData = await fetchWatchlist(watchlistId, userId, token);
+        setFormData({ title: watchlistData.title });
       } catch (err) {
         setError(err.response?.data?.error || "Failed to fetch watchlist item");
       }
     };
 
-    fetchWatchlistItem();
+    loadWatchlist();
   }, [watchlistId, userId, navigate, token, authenticated]);
 
   const handleChange = (e) => {
@@ -47,15 +39,8 @@ function WatchlistEdit({ authenticated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const requestData = {
-        ...formData,
-        user_id: userId,
-      };
-      await axios.put(
-        `http://127.0.0.1:5000/watchlists/update/${watchlistId}`,
-        requestData,
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
-      );
+      const requestData = { ...formData, user_id: userId };
+      await updateWatchlist(watchlistId, requestData, token);
       navigate("/watchlist");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update watchlist item");

@@ -1,22 +1,21 @@
-// src/pages/movies/create.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { fetchCurrentUser, createMovie } from "../../apis/movie";
 
 function MovieCreate({ authenticated }) {
   const [formData, setFormData] = useState({
     id: "",
     movie_title: "",
     movie_genres: "",
-    description: "", 
+    description: "",
   });
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!token || !authenticated) {
       setError("Please log in to continue");
       setLoading(false);
@@ -26,13 +25,8 @@ function MovieCreate({ authenticated }) {
 
     const checkUserRole = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:5000/auth/current-user",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setIsAdmin(response.data.role === "admin");
+        const userData = await fetchCurrentUser(token);
+        setIsAdmin(userData.role === "admin");
       } catch (err) {
         console.error("Failed to fetch current user:", err.response?.data);
         setError("Please log in to continue");
@@ -42,7 +36,7 @@ function MovieCreate({ authenticated }) {
       }
     };
     checkUserRole();
-  }, [navigate, authenticated]);
+  }, [navigate, authenticated, token]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -53,24 +47,18 @@ function MovieCreate({ authenticated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
     if (!isAdmin || !authenticated) {
       setError("Only admins can create movies");
       return;
     }
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/movies/create",
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      console.log("Movie create response:", response.data);
+      await createMovie(formData, token);
       setFormData({
         id: "",
         movie_title: "",
         movie_genres: "",
         description: "",
-      }); // Reset description too
+      });
       setError("");
       navigate("/movies");
     } catch (err) {

@@ -1,15 +1,16 @@
-// src/pages/watchlist/single.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
+import { fetchMovie } from "../../apis/movie"; 
 
 function WatchlistSingle({ authenticated }) {
   const { watchlistId } = useParams();
   const [watchlistItem, setWatchlistItem] = useState(null);
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState("");
+  const [newMovieId, setNewMovieId] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,28 +20,15 @@ function WatchlistSingle({ authenticated }) {
       return;
     }
 
-    const fetchWatchlistItem = async () => {
+    const loadWatchlist = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/watchlists/${watchlistId}`,
-          {
-            params: { user_id: userId },
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-        console.log("Watchlist item response:", response.data);
-        setWatchlistItem(response.data);
+        const watchlistData = await fetchWatchlist(watchlistId, userId, token);
+        setWatchlistItem(watchlistData);
 
-        const moviePromises = response.data.movie_ids.map((movieId) =>
-          axios.get(`http://localhost:5000/movies/${movieId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          })
+        const moviePromises = watchlistData.movie_ids.map((movieId) =>
+          fetchMovie(movieId, token)
         );
-        const movieResponses = await Promise.all(moviePromises);
-        const movieData = movieResponses.map((res) => res.data);
-        console.log("Movie data:", movieData);
+        const movieData = await Promise.all(moviePromises);
         setMovies(movieData);
       } catch (err) {
         console.error("Fetch watchlist error:", err.response?.data);
@@ -48,7 +36,7 @@ function WatchlistSingle({ authenticated }) {
       }
     };
 
-    fetchWatchlistItem();
+    loadWatchlist();
   }, [watchlistId, userId, navigate, token, authenticated]);
 
   const handleRemoveMovie = async (movieIdToRemove) => {
@@ -60,17 +48,17 @@ function WatchlistSingle({ authenticated }) {
       return;
 
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${watchlistId}`,
+      await updateWatchlist(
+        watchlistId,
         { user_id: userId, remove_movie_id: movieIdToRemove },
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        token
       );
-      console.log("Remove movie response:", response.data);
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
       }));
       setMovies((prev) => prev.filter((movie) => movie.id !== movieIdToRemove));
+      setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
     }
@@ -79,12 +67,11 @@ function WatchlistSingle({ authenticated }) {
   const handleToggleVisibility = async () => {
     const newVisibility = !watchlistItem.is_public;
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${watchlistId}`,
+      await updateWatchlist(
+        watchlistId,
         { user_id: userId, is_public: newVisibility },
-        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+        token
       );
-      console.log("Toggle visibility response:", response.data);
       setWatchlistItem((prev) => ({
         ...prev,
         is_public: newVisibility,
@@ -92,6 +79,38 @@ function WatchlistSingle({ authenticated }) {
       alert(`Watchlist is now ${newVisibility ? "public" : "private"}!`);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update visibility");
+    }
+  };
+
+  const handleAddMovie = async () => {
+    if (!newMovieId) {
+      setError("Please enter a movie ID to add.");
+      return;
+    }
+
+    try {
+      await updateWatchlist(
+        watchlistId,
+        { user_id: userId, movie_id: newMovieId },
+        token
+      );
+      const newMovie = await fetchMovie(newMovieId, token);
+      setWatchlistItem((prev) => ({
+        ...prev,
+        movie_ids: [...prev.movie_ids, newMovieId],
+      }));
+      setMovies((prev) => [...prev, newMovie]);
+      setNewMovieId("");
+      setError("");
+    } catch (err) {
+      console.error("Add movie error:", err.response?.data);
+      if (err.response?.status === 409) {
+        setError("This movie is already in the watchlist.");
+      } else if (err.response?.status === 404) {
+        setError("Movie not found.");
+      } else {
+        setError(err.response?.data?.error || "Failed to add movie");
+      }
     }
   };
 
@@ -135,6 +154,24 @@ function WatchlistSingle({ authenticated }) {
           </ul>
         ) : (
           <p>No movies in this watchlist yet.</p>
+        )}
+
+        {authenticated && (
+          <div className="mt-4">
+            <input
+              type="text"
+              value={newMovieId}
+              onChange={(e) => setNewMovieId(e.target.value)}
+              placeholder="Enter Movie ID to add"
+              className="p-2 border rounded mr-2"
+            />
+            <button
+              onClick={handleAddMovie}
+              className="bg-green-500 text-white p-2 rounded"
+            >
+              Add Movie
+            </button>
+          </div>
         )}
 
         {authenticated && (
