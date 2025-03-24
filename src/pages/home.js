@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { fetchTopRankedMovies } from "../apis/ranking";
 import { fetchUserRatings, updateRating, deleteRating } from "../apis/ratings";
+import MovieCard from "../components/movieCard";
 
 function Home({ authenticated, onAuthenticated }) {
   const [topMovies, setTopMovies] = useState([]);
@@ -21,48 +22,28 @@ function Home({ authenticated, onAuthenticated }) {
       return;
     }
 
-    console.log("Current userId:", userId);
-    console.log("Token:", token);
-
     const fetchTopMovies = async () => {
       try {
         const data = await fetchTopRankedMovies(userId, token);
-        console.log("Top movies response:", data);
+        console.log("Top Movies Data:", data.top_ranked_movies);
         setTopMovies(data.top_ranked_movies);
       } catch (err) {
-        console.error("Error fetching top movies:", err.response?.data);
-        if (err.response?.status === 401) {
-          setError("Session expired. Please log in again.");
-          onAuthenticated(false);
-          localStorage.clear();
-          navigate("/");
-        } else {
-          setError(err.response?.data?.error || "Failed to fetch top movies");
-        }
+        setError(err.response?.data?.error || "Failed to fetch top movies");
       }
     };
 
     const fetchRatings = async () => {
       try {
         const data = await fetchUserRatings(userId, token);
-        console.log("User ratings response:", data);
         setUserRatings(data.rated_movies);
       } catch (err) {
-        console.error("Error fetching user ratings:", err.response?.data);
-        if (err.response?.status === 401) {
-          setError("Session expired. Please log in again.");
-          onAuthenticated(false);
-          localStorage.clear();
-          navigate("/");
-        } else {
-          setError(err.response?.data?.error || "Failed to fetch user ratings");
-        }
+        setError(err.response?.data?.error || "Failed to fetch user ratings");
       }
     };
 
     fetchTopMovies();
     fetchRatings();
-  }, [userId, navigate, authenticated, token, onAuthenticated]);
+  }, [userId, navigate, authenticated, token]);
 
   const handleEditRating = (rating) => {
     setEditingRatingId(rating.id);
@@ -77,132 +58,109 @@ function Home({ authenticated, onAuthenticated }) {
         return;
       }
       await updateRating(ratingId, ratingValue, token);
-      const updatedRatings = userRatings.map((rating) =>
-        rating.id === ratingId ? { ...rating, rating: ratingValue } : rating
+      setUserRatings(
+        userRatings.map((rating) =>
+          rating.id === ratingId ? { ...rating, rating: ratingValue } : rating
+        )
       );
-      setUserRatings(updatedRatings);
       setEditingRatingId(null);
       setNewRatingValue("");
       setError("");
     } catch (err) {
-      console.error("Error updating rating:", err.response?.data);
-      if (err.response?.status === 401) {
-        setError("Session expired. Please log in again.");
-        onAuthenticated(false);
-        localStorage.clear();
-        navigate("/");
-      } else {
-        setError(err.response?.data?.error || "Failed to update rating");
-      }
+      setError(err.response?.data?.error || "Failed to update rating");
     }
   };
 
   const handleDeleteRating = async (ratingId) => {
     if (!window.confirm("Are you sure you want to delete this rating?")) return;
     try {
-      const response = await deleteRating(ratingId, token);
-      console.log("Delete rating response:", response);
+      await deleteRating(ratingId, token);
       setUserRatings(userRatings.filter((rating) => rating.id !== ratingId));
       setError("");
     } catch (err) {
-      console.error("Error deleting rating:", err.response?.data);
-      if (err.response?.status === 401) {
-        setError("Session expired. Please log in again.");
-        onAuthenticated(false);
-        localStorage.clear();
-        navigate("/");
-      } else {
-        setError(err.response?.data?.error || "Failed to delete rating");
-      }
+      setError(err.response?.data?.error || "Failed to delete rating");
     }
   };
 
+  const renderRankedMovies = (movies) => {
+    if (movies.length === 0 && !error) {
+      return (
+        <div className="text-center text-gray-500">
+          Loading recommended movies...
+        </div>
+      );
+    }
+
+    const topRow = movies.slice(0, 4); // First 4 movies
+    const bottomMovie = movies.length > 4 ? movies[4] : null; // 5th movie
+
+    return (
+      <div className="flex flex-col items-center gap-6">
+        {/* Top Row: 4 Cards */}
+        <div className="flex flex-wrap gap-6 justify-center w-full">
+          {topRow.map((movie) => (
+            <div
+              key={movie.id || movie.title || Math.random()}
+              className="w-1/4 flex-shrink-0 px-2"
+            >
+              <MovieCard movie={movie} to={`/movies/${movie.id}`} />
+            </div>
+          ))}
+        </div>
+        {/* Bottom Row: 1 Card Centered */}
+        {bottomMovie && (
+          <div className="flex justify-center w-full">
+            <div className="w-1/4 flex-shrink-0 px-2">
+              <MovieCard movie={bottomMovie} to={`/movies/${bottomMovie.id}`} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto mt-10">
-      <section className="mb-10">
-        <h2 className="text-2xl mb-4">
+    <div className="container mx-auto p-6">
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-primary mb-6">
           Welcome, {role ? `${role} User` : "User"}!
         </h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <h3 className="text-xl mb-2">Recommended Movies</h3>
-        {topMovies.length === 0 && !error ? (
-          <p>Loading recommended movies...</p>
-        ) : (
-          <ul className="space-y-4">
-            {topMovies.map((movie, index) => (
-              <li
-                key={index}
-                className="p-4 bg-white rounded shadow flex justify-between items-center"
-              >
-                <div>
-                  <strong>{movie.title}</strong> ({movie.genres})
-                  <p>Predicted Rating: {movie.rating.toFixed(2)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        {error && <div className="alert alert-error mb-6">{error}</div>}
+        <h3 className="text-2xl font-semibold mb-4">Recommended Movies</h3>
+        {renderRankedMovies(topMovies)}
       </section>
 
       <section>
-        <h3 className="text-xl mb-4">Top Ratings</h3>
+        <h3 className="text-2xl font-semibold mb-4">Your Top Ratings</h3>
         {userRatings.length === 0 ? (
-          <p>You haven’t rated any movies yet.</p>
+          <div className="text-center text-gray-500">
+            Go off and explore our movie selection!{" "}
+            <Link to="/movies" className="underline text-blue-500">
+              Browse Movies
+            </Link>
+          </div>
         ) : (
-          <ul className="space-y-4">
+          <div className="flex flex-wrap gap-6 justify-center">
             {userRatings.map((rating) => (
-              <li
-                key={rating.id}
-                className="p-4 bg-white rounded shadow flex justify-between items-center"
-              >
-                <div>
-                  <strong>{rating.title}</strong> ({rating.genres})
-                  {editingRatingId === rating.id ? (
-                    <div className="mt-2">
-                      <input
-                        type="text"
-                        value={newRatingValue}
-                        onChange={(e) => setNewRatingValue(e.target.value)}
-                        placeholder="New rating (1.0-5.0)"
-                        className="p-1 border rounded mr-2"
-                      />
-                      <button
-                        onClick={() => handleSaveRating(rating.id)}
-                        className="bg-green-500 text-white p-1 rounded mr-2"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingRatingId(null);
-                          setNewRatingValue("");
-                        }}
-                        className="bg-gray-500 text-white p-1 rounded"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p>Your Rating: {rating.rating.toFixed(2)}</p>
-                      <button
-                        onClick={() => handleEditRating(rating)}
-                        className="bg-yellow-500 text-white p-1 rounded mr-2 mt-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRating(rating.id)}
-                        className="bg-red-500 text-white p-1 rounded mt-2"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </li>
+              <div key={rating.id} className="w-1/5 flex-shrink-0 px-2">
+                <MovieCard
+                  movie={rating}
+                  to={`/movies/${rating.movie_id || rating.id}`}
+                  showActions={true}
+                  onEdit={() => handleEditRating(rating)}
+                  onDelete={() => handleDeleteRating(rating.id)}
+                  isEditing={editingRatingId === rating.id}
+                  newRatingValue={newRatingValue}
+                  onRatingChange={(e) => setNewRatingValue(e.target.value)}
+                  onSave={() => handleSaveRating(rating.id)}
+                  onCancel={() => {
+                    setEditingRatingId(null);
+                    setNewRatingValue("");
+                  }}
+                />
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>

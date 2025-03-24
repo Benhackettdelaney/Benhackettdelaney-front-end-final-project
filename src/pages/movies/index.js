@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import MovieCard from "../../components/movieCard";
+import { fetchAllMovies } from "../../apis/movie"; 
 
 function All({ authenticated, search }) {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
+  const [visibleMovies, setVisibleMovies] = useState(32);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -20,6 +22,7 @@ function All({ authenticated, search }) {
       );
       setFilteredMovies(filtered);
     }
+    setVisibleMovies(32);
   }, [movies, search]);
 
   const fetchMovies = async () => {
@@ -29,45 +32,60 @@ function All({ authenticated, search }) {
       return;
     }
     try {
-      const response = await axios.get("http://127.0.0.1:5000/movies", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setMovies(response.data);
-      setFilteredMovies(response.data);
+      const moviesData = await fetchAllMovies(token); // Use your API function
+      setMovies(moviesData);
+      setFilteredMovies(moviesData);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to fetch movies");
+      console.error("Fetch error:", err.response?.data || err.message);
     }
   };
 
+  const handleShowMore = () => {
+    setVisibleMovies((prev) => prev + 32);
+  };
+
+  const handleShowLess = () => {
+    setVisibleMovies((prev) => Math.max(32, prev - 32));
+  };
+
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Movies</h2>
-      {error && <p className="text-red-500">{error}</p>}
-      {authenticated && (
-        <Link
-          to="/movies/create"
-          className="bg-green-500 text-white p-2 rounded mb-4 inline-block"
-        >
-          Create New Movie
-        </Link>
-      )}
-      <ul className="space-y-4">
-        {filteredMovies.map((movie) => (
-          <li key={movie.id} className="p-4 bg-white rounded shadow">
-            <p>
-              <Link
-                to={`/movies/${movie.id}`}
-                className="text-blue-500 hover:underline"
-              >
-                <strong>{movie.movie_title}</strong>
-              </Link>{" "}
-              ({movie.movie_genres})
-            </p>
-          </li>
+    <div className="container mx-auto p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-primary">Movies</h2>
+        {authenticated && (
+          <Link to="/movies/create" className="btn btn-success">
+            Create New Movie
+          </Link>
+        )}
+      </div>
+      {error && <div className="alert alert-error mb-8">{error}</div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {filteredMovies.slice(0, visibleMovies).map((movie) => (
+          <MovieCard
+            key={movie.id}
+            movie={{
+              id: movie.id,
+              title: movie.movie_title,
+              genres: movie.movie_genres,
+              ratingsCount: movie.ratings_count,
+              reviewsCount: movie.reviews_count,
+            }}
+          />
         ))}
-      </ul>
+      </div>
+      <div className="text-center mt-8 flex justify-center gap-4">
+        {visibleMovies < filteredMovies.length && (
+          <button onClick={handleShowMore} className="btn btn-primary">
+            Show More
+          </button>
+        )}
+        {visibleMovies > 32 && (
+          <button onClick={handleShowLess} className="btn btn-secondary">
+            Show Less
+          </button>
+        )}
+      </div>
     </div>
   );
 }
