@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, createMovie } from "../../apis/movie";
+import { fetchAllActors } from "../../apis/actor"; 
 
 function MovieCreate({ authenticated }) {
   const [formData, setFormData] = useState({
@@ -8,7 +9,9 @@ function MovieCreate({ authenticated }) {
     movie_title: "",
     movie_genres: "",
     description: "",
+    actor_id: "",
   });
+  const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -23,19 +26,22 @@ function MovieCreate({ authenticated }) {
       return;
     }
 
-    const checkUserRole = async () => {
+    const checkUserRoleAndFetchActors = async () => {
       try {
         const userData = await fetchCurrentUser(token);
         setIsAdmin(userData.role === "admin");
+
+        const actorData = await fetchAllActors(token);
+        setActors(actorData);
       } catch (err) {
-        console.error("Failed to fetch current user:", err.response?.data);
+        console.error("Failed to fetch data:", err.response?.data);
         setError("Please log in to continue");
         setIsAdmin(false);
       } finally {
         setLoading(false);
       }
     };
-    checkUserRole();
+    checkUserRoleAndFetchActors();
   }, [navigate, authenticated, token]);
 
   const handleChange = (e) => {
@@ -58,6 +64,7 @@ function MovieCreate({ authenticated }) {
         movie_title: "",
         movie_genres: "",
         description: "",
+        actor_id: "",
       });
       setError("");
       navigate("/movies");
@@ -69,24 +76,33 @@ function MovieCreate({ authenticated }) {
 
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
+  const errStyle = { color: "red" };
+
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Create New Movie</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="container mx-auto mt-10 flex flex-col items-center space-y-12">
+      <h2 className="text-4xl">Create New Movie</h2>
+      {error && (
+        <p style={errStyle} className="text-center">
+          {error}
+        </p>
+      )}
       {!isAdmin || !authenticated ? (
-        <p className="text-red-500">
+        <p style={errStyle} className="text-center max-w-md">
           You must be an admin to create movies. Please log in with an admin
           account.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mb-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col items-center space-y-6"
+        >
           <input
             type="text"
             name="id"
             placeholder="Movie ID (e.g., tt1234567)"
             value={formData.id}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md"
+            className="input input-bordered w-full max-w-xs"
             required
           />
           <input
@@ -95,7 +111,7 @@ function MovieCreate({ authenticated }) {
             placeholder="Movie Title"
             value={formData.movie_title}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md"
+            className="input input-bordered w-full max-w-xs"
             required
           />
           <input
@@ -104,7 +120,7 @@ function MovieCreate({ authenticated }) {
             placeholder="Genres (comma-separated)"
             value={formData.movie_genres}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md"
+            className="input input-bordered w-full max-w-xs"
             required
           />
           <textarea
@@ -112,19 +128,30 @@ function MovieCreate({ authenticated }) {
             placeholder="Description (optional)"
             value={formData.description}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md h-24"
+            className="input input-bordered w-full max-w-xs h-24"
           />
-          <button type="submit" className="bg-green-500 text-white p-2 rounded">
+          <select
+            name="actor_id"
+            value={formData.actor_id}
+            onChange={handleChange}
+            className="select select-bordered w-full max-w-xs"
+            required
+          >
+            <option value="">Select an Actor</option>
+            {actors.map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn btn-active">
             Create Movie
           </button>
         </form>
       )}
-      <button
-        onClick={() => navigate("/movies")}
-        className="bg-gray-500 text-white p-2 rounded"
-      >
+      <Link to="/movies" className="underline text-blue-500">
         Back to Movies
-      </button>
+      </Link>
     </div>
   );
 }

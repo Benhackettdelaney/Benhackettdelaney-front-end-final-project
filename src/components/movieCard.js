@@ -18,7 +18,6 @@ const MovieCard = ({
 
   return (
     <div className="card bg-base-100 w-96 shadow-sm hover:shadow-lg transition-shadow relative">
-      {/* Image and Details */}
       <figure>
         <Link to={to || `/movies/${movie.id}`}>
           <img
@@ -40,7 +39,6 @@ const MovieCard = ({
             Rating: {movie.rating.toFixed(2)}
           </p>
         )}
-        {/* Display Ratings and Reviews Counts */}
         {(movie.ratingsCount !== undefined ||
           movie.reviewsCount !== undefined) && (
           <p className="text-sm text-gray-500">
@@ -53,7 +51,6 @@ const MovieCard = ({
           </p>
         )}
 
-        {/* Action Buttons (Outside Link) */}
         {showActions && (
           <div className="mt-4 flex justify-end gap-2">
             {isEditing ? (

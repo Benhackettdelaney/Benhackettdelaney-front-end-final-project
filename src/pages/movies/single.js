@@ -1,7 +1,16 @@
-// src/pages/movies/single.jsx
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { createRating } from "../../apis/ratings";
+import { updateWatchlist } from "../../apis/watchlist";
+import { fetchMovie, deleteMovie } from "../../apis/movie";
+import { fetchWatchlists } from "../../apis/watchlist";
+import {
+  fetchReviews,
+  createReview,
+  updateReview,
+  deleteReview,
+} from "../../apis/reviews";
+import { removeActorFromMovie } from "../../apis/actor";
 
 function MovieSingle({ authenticated }) {
   const { movieId } = useParams();
@@ -11,9 +20,15 @@ function MovieSingle({ authenticated }) {
   const [selectedWatchlistId, setSelectedWatchlistId] = useState("");
   const [reviewContent, setReviewContent] = useState("");
   const [editingReviewId, setEditingReviewId] = useState(null);
+  const [actorToRemove, setActorToRemove] = useState(null); // For actor removal confirmation
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role"); // Check if user is admin
   const [error, setError] = useState("");
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const deleteMovieModalRef = useRef(null);
+  const deleteReviewModalRef = useRef(null);
+  const deleteActorModalRef = useRef(null); // New ref for actor removal modal
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,52 +40,50 @@ function MovieSingle({ authenticated }) {
       return;
     }
 
-    const fetchMovie = async () => {
+    const fetchMovieData = async () => {
+      console.log("Token used for fetching movie:", token);
       try {
-        const response = await axios.get(
-          `http://localhost:5000/movies/${movieId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setMovie(response.data);
+        const response = await fetchMovie(movieId, token);
+        setMovie(response);
       } catch (err) {
-        setError(err.response?.data?.error || "Failed to fetch movie");
+        setError(err.error || "Failed to fetch movie");
+        if (err.response?.status === 401)
+          setError("Unauthorized: Please log in again.");
       }
     };
 
-    const fetchWatchlists = async () => {
+    const fetchWatchlistsData = async () => {
+      console.log("Token used for fetching watchlists:", token);
       try {
-        const response = await axios.get("http://localhost:5000/watchlists", {
-          params: { user_id: userId },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("Watchlists response:", response.data);
-        setWatchlists(response.data);
-        const myList = response.data.find((item) => item.title === "My List");
+        const response = await fetchWatchlists(userId, token);
+        setWatchlists(response);
+        const myList = response.find((item) => item.title === "My List");
         if (myList) setSelectedWatchlistId(myList.id);
       } catch (err) {
-        console.error("Fetch watchlists error:", err.response?.data);
-        setError(err.response?.data?.error || "Failed to fetch watchlists");
+        console.error("Fetch watchlists error:", err);
+        setError(err.error || "Failed to fetch watchlists");
+        if (err.response?.status === 401)
+          setError("Unauthorized: Please log in again.");
       }
     };
 
-    const fetchReviews = async () => {
+    const fetchReviewsData = async () => {
+      console.log("Token used for fetching reviews:", token);
       try {
-        const response = await axios.get(
-          `http://localhost:5000/reviews/movie/${movieId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        console.log("Reviews response:", response.data);
-        setReviews(response.data.reviews);
+        const response = await fetchReviews(movieId, token);
+        setReviews(response);
       } catch (err) {
-        console.error("Fetch reviews error:", err.response?.data);
-        setError(err.response?.data?.error || "Failed to fetch reviews");
+        console.error("Fetch reviews error:", err);
+        setError(err.error || "Failed to fetch reviews");
+        if (err.response?.status === 401)
+          setError("Unauthorized: Please log in again.");
       }
     };
 
-    fetchMovie();
+    fetchMovieData();
     if (userId && authenticated) {
-      fetchWatchlists();
-      fetchReviews();
+      fetchWatchlistsData();
+      fetchReviewsData();
     }
   }, [movieId, userId, navigate, authenticated, token]);
 
@@ -84,25 +97,19 @@ function MovieSingle({ authenticated }) {
       setError("Please select a watchlist");
       return;
     }
+    console.log("Token used for adding to watchlist:", token);
     try {
-      const response = await axios.put(
-        `http://localhost:5000/watchlists/update/${selectedWatchlistId}`,
+      await updateWatchlist(
+        selectedWatchlistId,
         { user_id: userId, movie_id: movieId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        token
       );
-      if (response.data.message === "Watchlist updated successfully") {
-        alert("Movie added to watchlist!");
-        const watchlistResponse = await axios.get(
-          "http://localhost:5000/watchlists",
-          {
-            params: { user_id: userId },
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setWatchlists(watchlistResponse.data);
-      }
+      const watchlistResponse = await fetchWatchlists(userId, token);
+      setWatchlists(watchlistResponse);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add to watchlist");
+      setError(err.error || "Failed to add to watchlist");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
 
@@ -112,33 +119,35 @@ function MovieSingle({ authenticated }) {
       navigate("/");
       return;
     }
+    console.log("Token used for rating:", token);
     try {
-      await axios.post(
-        "http://localhost:5000/ratings",
-        { user_id: userId, movie_id: movieId, rating },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Rating submitted!");
+      await createRating(userId, movieId, rating, token);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to rate movie");
+      setError(err.error || "Failed to rate movie");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!userId || !authenticated) {
       setError("Please log in to delete movies");
       navigate("/");
       return;
     }
-    if (!window.confirm("Are you sure you want to delete this movie?")) return;
+    deleteMovieModalRef.current.showModal();
+  };
+
+  const confirmDeleteMovie = async () => {
+    console.log("Token used for deleting movie:", token);
     try {
-      await axios.delete(`http://localhost:5000/movies/delete/${movieId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Movie deleted successfully!");
+      await deleteMovie(movieId, token);
+      deleteMovieModalRef.current.close();
       navigate("/movies");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete movie");
+      setError(err.error || "Failed to delete movie");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
 
@@ -148,17 +157,15 @@ function MovieSingle({ authenticated }) {
       navigate("/");
       return;
     }
+    console.log("Token used for adding review:", token);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/reviews/create", // Fixed to /reviews/create
-        { movie_id: movieId, content: reviewContent },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setReviews([...reviews, response.data]);
+      const response = await createReview(movieId, reviewContent, token);
+      setReviews([...reviews, response]);
       setReviewContent("");
-      alert("Review added successfully!");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add review");
+      setError(err.error || "Failed to add review");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
 
@@ -167,44 +174,103 @@ function MovieSingle({ authenticated }) {
       setError("Please log in to edit reviews");
       return;
     }
+    console.log("Token used for editing review:", token);
     try {
-      const response = await axios.put(
-        `http://localhost:5000/reviews/update/${reviewId}`, // Updated to match your review.py
-        { content: reviewContent },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await updateReview(reviewId, reviewContent, token);
       setReviews(
         reviews.map((r) =>
-          r.id === reviewId ? { ...r, content: response.data.content } : r
+          r.id === reviewId ? { ...r, content: response.content } : r
         )
       );
       setEditingReviewId(null);
       setReviewContent("");
-      alert("Review updated successfully!");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to edit review");
+      setError(err.error || "Failed to edit review");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
 
-  const handleDeleteReview = async (reviewId) => {
+  const handleDeleteReview = (reviewId) => {
     if (!userId || !authenticated) {
       setError("Please log in to delete reviews");
       return;
     }
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    setReviewToDelete(reviewId);
+    deleteReviewModalRef.current.showModal();
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!reviewToDelete) return;
+    console.log("Token used for deleting review:", token);
     try {
-      await axios.delete(
-        `http://localhost:5000/reviews/delete/${reviewId}`, // Updated to match your review.py
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setReviews(reviews.filter((r) => r.id !== reviewId));
-      alert("Review deleted successfully!");
+      await deleteReview(reviewToDelete, token);
+      setReviews(reviews.filter((r) => r.id !== reviewToDelete));
+      setReviewToDelete(null);
+      deleteReviewModalRef.current.close();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete review");
+      setError(err.error || "Failed to delete review");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
     }
   };
+
+  const handleRemoveActor = (actorId) => {
+    if (!userId || !authenticated || role !== "admin") {
+      setError("Only admins can remove actors from movies");
+      return;
+    }
+    setActorToRemove(actorId);
+    deleteActorModalRef.current.showModal();
+  };
+
+  const confirmRemoveActor = async () => {
+    if (!actorToRemove) return;
+    console.log("Token used for removing actor:", token);
+    try {
+      await removeActorFromMovie(movieId, actorToRemove, token);
+      setMovie({
+        ...movie,
+        actors: movie.actors.filter((actor) => actor.id !== actorToRemove),
+      });
+      setActorToRemove(null);
+      deleteActorModalRef.current.close();
+    } catch (err) {
+      setError(err.error || "Failed to remove actor from movie");
+      if (err.response?.status === 401)
+        setError("Unauthorized: Please log in again.");
+    }
+  };
+
+  const renderActors = () => (
+    <div className="mt-6">
+      <h3 className="text-xl mb-4">Actors</h3>
+      {movie.actors && movie.actors.length > 0 ? (
+        <div className="flex flex-wrap gap-4">
+          {movie.actors.map((actor) => (
+            <div key={actor.id} className="flex items-center gap-2">
+              <Link
+                to={`/actors/${actor.id}`}
+                className="btn btn-outline btn-primary"
+              >
+                {actor.name}
+              </Link>
+              {role === "admin" && (
+                <button
+                  onClick={() => handleRemoveActor(actor.id)}
+                  className="btn btn-error btn-sm"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p>No actors assigned yet.</p>
+      )}
+    </div>
+  );
 
   if (!movie) return <div>Loading...</div>;
 
@@ -215,6 +281,7 @@ function MovieSingle({ authenticated }) {
         <p>
           <strong>{movie.movie_title}</strong> ({movie.movie_genres})
         </p>
+        <p className="mt-2">{movie.description}</p>
         <div className="mt-2">
           <select
             value={selectedWatchlistId}
@@ -270,7 +337,74 @@ function MovieSingle({ authenticated }) {
         )}
       </div>
 
-      {/* Review Section */}
+      {/* Actors Section */}
+      {renderActors()}
+
+      {/* DaisyUI Modal for Movie Delete Confirmation */}
+      <dialog
+        id="delete_movie_modal"
+        className="modal"
+        ref={deleteMovieModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Delete</h3>
+          <p className="py-4">Are you sure you want to delete this movie?</p>
+          <div className="modal-action">
+            <button onClick={confirmDeleteMovie} className="btn btn-error mr-2">
+              Yes, Delete
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* DaisyUI Modal for Review Delete Confirmation */}
+      <dialog
+        id="delete_review_modal"
+        className="modal"
+        ref={deleteReviewModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Delete</h3>
+          <p className="py-4">Are you sure you want to delete this review?</p>
+          <div className="modal-action">
+            <button
+              onClick={confirmDeleteReview}
+              className="btn btn-error mr-2"
+            >
+              Yes, Delete
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* DaisyUI Modal for Actor Removal Confirmation */}
+      <dialog
+        id="delete_actor_modal"
+        className="modal"
+        ref={deleteActorModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Removal</h3>
+          <p className="py-4">
+            Are you sure you want to remove this actor from the movie?
+          </p>
+          <div className="modal-action">
+            <button onClick={confirmRemoveActor} className="btn btn-error mr-2">
+              Yes, Remove
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
       <div className="mt-6">
         <h3 className="text-xl mb-4">Reviews</h3>
         <textarea

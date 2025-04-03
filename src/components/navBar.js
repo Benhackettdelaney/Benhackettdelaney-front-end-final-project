@@ -1,8 +1,19 @@
+// src/components/navBar.js
 import React, { useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import SignOut from "./signOut"; 
 
-const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
+const Navbar = ({
+  authenticated,
+  onAuthenticated,
+  search,
+  onHandleChange,
+  selectedGenre,
+  onGenreSelect,
+}) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const role = localStorage.getItem("role");
 
   useEffect(() => {
     console.log("Navbar rendered for path:", location.pathname);
@@ -12,11 +23,26 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
     return null;
   }
 
-  const handleLogout = () => {
-    localStorage.clear();
-    onAuthenticated(false);
-    window.location.href = "/";
-  };
+  const genres = [
+    "Action",
+    "Adventure",
+    "Animation",
+    "Children",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Fantasy",
+    "Film-Noir",
+    "Horror",
+    "Musical",
+    "Mystery",
+    "Romance",
+    "Sci-Fi",
+    "Thriller",
+    "War",
+    "Western",
+  ];
 
   return (
     <div className="navbar bg-base-100 shadow-sm">
@@ -53,18 +79,59 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
               Public Watchlists
             </Link>
           </li>
+          {role === "admin" && (
+            <li>
+              <Link to="/actors" className="hover:underline">
+                Actors
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
 
       <div className="navbar-end flex gap-2">
         {location.pathname === "/movies" && (
-          <input
-            type="text"
-            placeholder="Search movies..."
-            value={search}
-            onChange={onHandleChange}
-            className="input input-bordered w-24 md:w-auto"
-          />
+          <>
+            <input
+              type="text"
+              placeholder="Search movies..."
+              value={search}
+              onChange={onHandleChange}
+              className="input input-bordered w-24 md:w-auto"
+            />
+            <div className="dropdown">
+              <label tabIndex={0} className="btn btn-ghost">
+                Genres
+              </label>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52"
+              >
+                <li>
+                  <button
+                    className={`w-full text-left ${
+                      !selectedGenre ? "btn-active" : ""
+                    }`}
+                    onClick={() => onGenreSelect("")}
+                  >
+                    All Genres
+                  </button>
+                </li>
+                {genres.map((genre) => (
+                  <li key={genre}>
+                    <button
+                      className={`w-full text-left ${
+                        selectedGenre === genre ? "btn-active" : ""
+                      }`}
+                      onClick={() => onGenreSelect(genre)}
+                    >
+                      {genre}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
         )}
 
         {authenticated && (
@@ -87,15 +154,11 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
             >
               <li>
                 <Link to="/profile" className="justify-between">
-                  Profile
-                  <span className="badge">New</span>
+                  Profile <span className="badge">New</span>
                 </Link>
               </li>
               <li>
-                <a>Settings</a>
-              </li>
-              <li>
-                <button onClick={handleLogout}>Logout</button>
+                <SignOut onAuthenticated={onAuthenticated} />
               </li>
             </ul>
           </div>
@@ -139,6 +202,11 @@ const Navbar = ({ authenticated, onAuthenticated, search, onHandleChange }) => {
             <li>
               <Link to="/public-watchlists">Public Watchlists</Link>
             </li>
+            {role === "admin" && (
+              <li>
+                <Link to="/actors">Actors</Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

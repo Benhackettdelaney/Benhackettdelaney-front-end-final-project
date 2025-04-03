@@ -1,45 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
-import { fetchMovie } from "../../apis/movie";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import axios from "axios"; // Using axios directly for public fetch
 
 function PublicWatchlistSingle({ authenticated }) {
-  const { watchlistId } = useParams();
+  const { id: watchlistId } = useParams(); // Renamed to avoid confusion
   const [watchlistItem, setWatchlistItem] = useState(null);
-  const [movies, setMovies] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [newMovieId, setNewMovieId] = useState("");
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!watchlistId || !userId || !token || !authenticated) {
-      setError("Please log in or provide a valid watchlist ID");
-      navigate("/");
-      return;
-    }
-
-    const loadWatchlist = async () => {
+    const loadPublicWatchlist = async () => {
       try {
-        const watchlistData = await fetchWatchlist(watchlistId, userId, token);
-        setWatchlistItem(watchlistData);
-
-        const moviePromises = watchlistData.movie_ids.map((movieId) =>
-          fetchMovie(movieId, token)
+        const response = await axios.get(
+          `http://localhost:5000/watchlists/public/${watchlistId}`
         );
-        const movieData = await Promise.all(moviePromises);
-        setMovies(movieData);
+        setWatchlistItem(response.data);
       } catch (err) {
-        console.error("Fetch watchlist error:", err.response?.data);
-        setError(err.response?.data?.error || "Failed to fetch watchlist item");
+        console.error("Fetch public watchlist error:", err.response?.data);
+        setError(
+          err.response?.data?.error || "Failed to fetch public watchlist"
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadWatchlist();
-  }, [watchlistId, userId, navigate, token, authenticated]);
+    loadPublicWatchlist();
+  }, [watchlistId]);
 
   const handleRemoveMovie = async (movieIdToRemove) => {
+    if (!authenticated || !userId || !token) {
+      setError("Please log in to remove movies from this watchlist");
+      return;
+    }
     if (
       !window.confirm(
         `Are you sure you want to remove "${movieIdToRemove}" from this watchlist?`
@@ -48,16 +45,16 @@ function PublicWatchlistSingle({ authenticated }) {
       return;
 
     try {
-      await updateWatchlist(
-        watchlistId,
+      await axios.put(
+        `http://localhost:5000/watchlists/update/${watchlistId}`,
         { user_id: userId, remove_movie_id: movieIdToRemove },
-        token
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
+        movies: prev.movies.filter((movie) => movie.id !== movieIdToRemove),
       }));
-      setMovies((prev) => prev.filter((movie) => movie.id !== movieIdToRemove));
       setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
@@ -65,12 +62,16 @@ function PublicWatchlistSingle({ authenticated }) {
   };
 
   const handleToggleVisibility = async () => {
+    if (!authenticated || !userId || !token) {
+      setError("Please log in to change watchlist visibility");
+      return;
+    }
     const newVisibility = !watchlistItem.is_public;
     try {
-      await updateWatchlist(
-        watchlistId,
+      await axios.put(
+        `http://localhost:5000/watchlists/update/${watchlistId}`,
         { user_id: userId, is_public: newVisibility },
-        token
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setWatchlistItem((prev) => ({
         ...prev,
@@ -85,23 +86,40 @@ function PublicWatchlistSingle({ authenticated }) {
   };
 
   const handleAddMovie = async () => {
+    if (!authenticated || !userId || !token) {
+      setError("Please log in to add movies to this watchlist");
+      return;
+    }
     if (!newMovieId) {
       setError("Please enter a movie ID to add.");
       return;
     }
 
     try {
-      await updateWatchlist(
-        watchlistId,
+      await axios.put(
+        `http://localhost:5000/watchlists/update/${watchlistId}`,
         { user_id: userId, movie_id: newMovieId },
-        token
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      const newMovie = await fetchMovie(newMovieId, token);
+      const newMovieResponse = await axios.get(
+        `http://localhost:5000/movies/${newMovieId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const newMovie = newMovieResponse.data;
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: [...prev.movie_ids, newMovieId],
+        movies: [
+          ...prev.movies,
+          {
+            id: newMovie.id,
+            title: newMovie.movie_title,
+            genres: newMovie.movie_genres,
+          },
+        ],
       }));
-      setMovies((prev) => [...prev, newMovie]);
       setNewMovieId("");
       setError("");
     } catch (err) {
@@ -116,81 +134,87 @@ function PublicWatchlistSingle({ authenticated }) {
     }
   };
 
-  if (!watchlistItem) return <div>Loading...</div>;
+  if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
+  if (error)
+    return <div className="container mx-auto mt-10 text-red-500">{error}</div>;
+  if (!watchlistItem)
+    return <div className="container mx-auto mt-10">Watchlist not found</div>;
 
   return (
-    <div className="container mx-auto mt-10">
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="p-4 bg-white rounded shadow">
-        <h2 className="text-2xl mb-4">{watchlistItem.title}</h2>
-        <p>
-          Visibility: {watchlistItem.is_public ? "Public" : "Private"}
-          {authenticated && (
-            <button
-              onClick={handleToggleVisibility}
-              className="ml-4 bg-blue-500 text-white p-1 rounded"
-            >
-              {watchlistItem.is_public ? "Make Private" : "Make Public"}
-            </button>
-          )}
-        </p>
-        <p>Movies in this watchlist:</p>
-        {movies.length > 0 ? (
+    <div className="container mx-auto p-8">
+      <h2 className="text-2xl font-bold text-primary mb-4">
+        {watchlistItem.title}
+      </h2>
+      <p className="text-gray-600">By: {watchlistItem.username}</p>
+      <p className="text-gray-600">
+        Visibility: {watchlistItem.is_public ? "Public" : "Private"}
+        {authenticated && watchlistItem.user_id === parseInt(userId) && (
+          <button
+            onClick={handleToggleVisibility}
+            className="ml-4 bg-blue-500 text-white p-1 rounded"
+          >
+            {watchlistItem.is_public ? "Make Private" : "Make Public"}
+          </button>
+        )}
+      </p>
+      <div className="mt-4">
+        <h3 className="text-xl font-semibold mb-2">Movies in this Watchlist</h3>
+        {watchlistItem.movies && watchlistItem.movies.length > 0 ? (
           <ul className="space-y-4">
-            {movies.map((movie) => (
+            {watchlistItem.movies.map((movie) => (
               <li
                 key={movie.id}
                 className="p-4 bg-gray-100 rounded shadow flex justify-between items-center"
               >
                 <div>
-                  <strong>{movie.movie_title}</strong> ({movie.movie_genres})
+                  <strong>{movie.title}</strong> ({movie.genres})
                 </div>
-                <button
-                  onClick={() => handleRemoveMovie(movie.id)}
-                  className="bg-red-500 text-white p-1 rounded"
-                >
-                  Remove
-                </button>
+                {authenticated &&
+                  watchlistItem.user_id === parseInt(userId) && (
+                    <button
+                      onClick={() => handleRemoveMovie(movie.id)}
+                      className="bg-red-500 text-white p-1 rounded"
+                    >
+                      Remove
+                    </button>
+                  )}
               </li>
             ))}
           </ul>
         ) : (
-          <p>No movies in this watchlist yet.</p>
+          <p className="text-gray-500">No movies in this watchlist yet.</p>
         )}
-
-        {authenticated && (
-          <div className="mt-4">
-            <input
-              type="text"
-              value={newMovieId}
-              onChange={(e) => setNewMovieId(e.target.value)}
-              placeholder="Enter Movie ID to add"
-              className="p-2 border rounded mr-2"
-            />
-            <button
-              onClick={handleAddMovie}
-              className="bg-green-500 text-white p-2 rounded"
-            >
-              Add Movie
-            </button>
-          </div>
-        )}
-
-        {authenticated && (
-          <button
-            onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
-            className="bg-yellow-500 text-white p-2 rounded mr-2 mt-4"
-          >
-            Edit Watchlist
-          </button>
-        )}
-        <button
-          onClick={() => navigate("/watchlist")}
-          className="bg-gray-500 text-white p-2 rounded mt-4"
-        >
-          Back to Watchlist
-        </button>
       </div>
+
+      {authenticated && watchlistItem.user_id === parseInt(userId) && (
+        <div className="mt-4">
+          <input
+            type="text"
+            value={newMovieId}
+            onChange={(e) => setNewMovieId(e.target.value)}
+            placeholder="Enter Movie ID to add"
+            className="p-2 border rounded mr-2"
+          />
+          <button
+            onClick={handleAddMovie}
+            className="bg-green-500 text-white p-2 rounded"
+          >
+            Add Movie
+          </button>
+        </div>
+      )}
+
+      {authenticated && watchlistItem.user_id === parseInt(userId) && (
+        <button
+          onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
+          className="bg-yellow-500 text-white p-2 rounded mr-2 mt-4"
+        >
+          Edit Watchlist
+        </button>
+      )}
+      <Link to="/public-watchlists" className="btn btn-neutral mt-6">
+        Back to Public Watchlists
+      </Link>
     </div>
   );
 }

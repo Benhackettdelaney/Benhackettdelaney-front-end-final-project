@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, fetchMovie, updateMovie } from "../../apis/movie";
+import { fetchAllActors } from "../../apis/actor"; // Assuming this is the correct path
 
 function MovieEdit({ authenticated }) {
   const { movieId } = useParams();
@@ -8,7 +9,9 @@ function MovieEdit({ authenticated }) {
     movie_title: "",
     movie_genres: "",
     description: "",
+    actor_id: "",
   });
+  const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -30,7 +33,7 @@ function MovieEdit({ authenticated }) {
       return;
     }
 
-    const checkUserRoleAndFetchMovie = async () => {
+    const checkUserRoleAndFetchData = async () => {
       try {
         const userData = await fetchCurrentUser(token);
         setIsAdmin(userData.role === "admin");
@@ -40,7 +43,11 @@ function MovieEdit({ authenticated }) {
           movie_title: movieData.movie_title,
           movie_genres: movieData.movie_genres,
           description: movieData.description || "",
+          actor_id: movieData.actors[0]?.id || "",
         });
+
+        const actorData = await fetchAllActors(token);
+        setActors(actorData);
       } catch (err) {
         console.error("Error:", err.response?.data);
         setError(err.response?.data?.error || "Failed to load movie data");
@@ -50,7 +57,7 @@ function MovieEdit({ authenticated }) {
       }
     };
 
-    checkUserRoleAndFetchMovie();
+    checkUserRoleAndFetchData();
   }, [movieId, navigate, authenticated, token]);
 
   const handleChange = (e) => {
@@ -78,24 +85,33 @@ function MovieEdit({ authenticated }) {
 
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
+  const errStyle = { color: "red" };
+
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Edit Movie</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="container mx-auto mt-10 flex flex-col items-center space-y-12">
+      <h2 className="text-4xl">Edit Movie</h2>
+      {error && (
+        <p style={errStyle} className="text-center">
+          {error}
+        </p>
+      )}
       {!isAdmin || !authenticated ? (
-        <p className="text-red-500">
+        <p style={errStyle} className="text-center max-w-md">
           You must be an admin to edit movies. Please log in with an admin
           account.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mb-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col items-center space-y-6"
+        >
           <input
             type="text"
             name="movie_title"
             placeholder="Movie Title"
             value={formData.movie_title}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md"
+            className="input input-bordered w-full max-w-xs"
             required
           />
           <input
@@ -104,7 +120,7 @@ function MovieEdit({ authenticated }) {
             placeholder="Genres (comma-separated)"
             value={formData.movie_genres}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md"
+            className="input input-bordered w-full max-w-xs"
             required
           />
           <textarea
@@ -112,19 +128,30 @@ function MovieEdit({ authenticated }) {
             placeholder="Description (optional)"
             value={formData.description}
             onChange={handleChange}
-            className="p-2 border rounded w-full max-w-md h-24"
+            className="input input-bordered w-full max-w-xs h-24"
           />
-          <button type="submit" className="bg-green-500 text-white p-2 rounded">
+          <select
+            name="actor_id"
+            value={formData.actor_id}
+            onChange={handleChange}
+            className="select select-bordered w-full max-w-xs"
+            required
+          >
+            <option value="">Select an Actor</option>
+            {actors.map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn btn-active">
             Update Movie
           </button>
         </form>
       )}
-      <button
-        onClick={() => navigate("/movies")}
-        className="bg-gray-500 text-white p-2 rounded"
-      >
+      <Link to="/movies" className="underline text-blue-500">
         Back to Movies
-      </button>
+      </Link>
     </div>
   );
 }

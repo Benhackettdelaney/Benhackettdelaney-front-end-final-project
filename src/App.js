@@ -1,3 +1,4 @@
+// 
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./index.css";
@@ -15,13 +16,18 @@ import WatchlistEdit from "./pages/watchlist/edit";
 import PageNotFound from "./pages/pageNotFound";
 import Home from "./pages/home";
 import Profile from "./pages/userProfile";
-import Navbar from "./components/navBar"; 
+import Navbar from "./components/navBar";
 import PublicWatchlists from "./pages/watchlist/public";
 import PublicWatchlistSingle from "./pages/watchlist/publicSingle";
+import ActorsAll from "./pages/actors/index";
+import ActorCreate from "./pages/actors/create"; 
+import ActorEdit from "./pages/actors/edit"; 
+
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -29,19 +35,14 @@ function App() {
     const role = localStorage.getItem("role");
 
     if (token && userId && role) {
-      setAuthenticated(true);
-      console.log("Restored auth state from localStorage:", {
-        token,
-        userId,
-        role,
-      });
-
+      console.log("Token used for initial validation:", token);
       axios
         .get("http://127.0.0.1:5000/auth/current-user", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
           console.log("Token validated:", response.data);
+          setAuthenticated(true);
           localStorage.setItem("userId", response.data.user_id);
           localStorage.setItem("role", response.data.role);
         })
@@ -52,6 +53,8 @@ function App() {
           localStorage.removeItem("userId");
           localStorage.removeItem("role");
         });
+    } else {
+      setAuthenticated(false);
     }
   }, []);
 
@@ -92,6 +95,10 @@ function App() {
     setSearch(e.target.value);
   };
 
+  const handleGenreSelect = (genre) => {
+    setSelectedGenre(genre === selectedGenre ? "" : genre);
+  };
+
   return (
     <Router>
       <Navbar
@@ -99,10 +106,10 @@ function App() {
         onAuthenticated={onAuthenticated}
         search={search}
         onHandleChange={onHandleChange}
+        selectedGenre={selectedGenre}
+        onGenreSelect={handleGenreSelect}
       />
       <div className="min-h-screen bg-base-200">
-        {" "}
-        {/* Added DaisyUI background */}
         <Routes>
           <Route
             path="/register"
@@ -124,7 +131,13 @@ function App() {
           />
           <Route
             path="/movies"
-            element={<All authenticated={authenticated} search={search} />}
+            element={
+              <All
+                authenticated={authenticated}
+                search={search}
+                selectedGenre={selectedGenre}
+              />
+            }
           />
           <Route
             path="/movies/:movieId"
@@ -154,6 +167,22 @@ function App() {
             path="/watchlist/:watchlistId/edit"
             element={<WatchlistEdit authenticated={authenticated} />}
           />
+          <Route
+            path="/actors"
+            element={<ActorsAll authenticated={authenticated} />}
+          />
+          <Route
+            path="/actors/create"
+            element={<ActorCreate authenticated={authenticated} />}
+          />
+          <Route
+            path="/actors/:actorId/edit"
+            element={<ActorEdit authenticated={authenticated} />}
+          />
+          {/* <Route
+            path="/actors/:actorId"
+            element={<ActorSingle authenticated={authenticated} />}
+          /> */}
           <Route path="*" element={<PageNotFound />} />
           <Route
             path="/home"

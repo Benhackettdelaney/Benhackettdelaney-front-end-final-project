@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchPublicWatchlists } from "../../apis/watchlist";
+import PublicWatchlistCard from "../../components/publicWatchlistCard"
 
 function PublicWatchlists() {
   const [watchlists, setWatchlists] = useState([]);
@@ -13,10 +14,8 @@ function PublicWatchlists() {
         const watchlistData = await fetchPublicWatchlists();
         setWatchlists(watchlistData);
       } catch (err) {
-        console.error("Error fetching public watchlists:", err.response?.data);
-        setError(
-          err.response?.data?.error || "Failed to fetch public watchlists"
-        );
+        console.error("Error fetching public watchlists:", err);
+        setError(err.error || "Failed to fetch public watchlists");
       } finally {
         setLoading(false);
       }
@@ -31,33 +30,20 @@ function PublicWatchlists() {
     return <div className="container mx-auto mt-10 text-red-500">{error}</div>;
 
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Public Watchlists</h2>
+    <div className="container mx-auto p-8">
+      <h2 className="text-2xl font-bold text-primary mb-4">
+        Public Watchlists
+      </h2>
       {watchlists.length === 0 ? (
-        <p>No public watchlists available.</p>
+        <p className="text-gray-500">No public watchlists available.</p>
       ) : (
-        <ul className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {watchlists.map((watchlist) => (
-            <li key={watchlist.id} className="p-4 bg-white rounded shadow">
-              <p>
-                <Link
-                  to={`/public-watchlists/${watchlist.id}`}
-                  className="text-blue-500 hover:underline"
-                >
-                  <strong>{watchlist.title}</strong>
-                </Link>{" "}
-                by {watchlist.username}
-              </p>
-              <p>Movies: {watchlist.movie_ids.join(", ")}</p>
-              <p>Visibility: Public</p>
-            </li>
+            <PublicWatchlistCard key={watchlist.id} watchlist={watchlist} />
           ))}
-        </ul>
+        </div>
       )}
-      <Link
-        to="/home"
-        className="bg-gray-500 text-white p-2 rounded mt-4 inline-block"
-      >
+      <Link to="/home" className="btn btn-neutral mt-6">
         Back to Home
       </Link>
     </div>

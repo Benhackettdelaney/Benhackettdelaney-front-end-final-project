@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
-import { fetchMovie } from "../../apis/movie"; 
+import { fetchMovie } from "../../apis/movie";
 
 function WatchlistSingle({ authenticated }) {
   const { watchlistId } = useParams();
@@ -9,8 +9,10 @@ function WatchlistSingle({ authenticated }) {
   const [movies, setMovies] = useState([]);
   const [error, setError] = useState("");
   const [newMovieId, setNewMovieId] = useState("");
+  const [movieToRemove, setMovieToRemove] = useState(null); // Track movie to remove
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  const deleteMovieModalRef = useRef(null); // Ref for delete modal
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,25 +41,26 @@ function WatchlistSingle({ authenticated }) {
     loadWatchlist();
   }, [watchlistId, userId, navigate, token, authenticated]);
 
-  const handleRemoveMovie = async (movieIdToRemove) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to remove "${movieIdToRemove}" from this watchlist?`
-      )
-    )
-      return;
+  const handleRemoveMovie = (movieIdToRemove) => {
+    setMovieToRemove(movieIdToRemove);
+    deleteMovieModalRef.current.showModal(); // Show the modal
+  };
 
+  const confirmRemoveMovie = async () => {
+    if (!movieToRemove) return;
     try {
       await updateWatchlist(
         watchlistId,
-        { user_id: userId, remove_movie_id: movieIdToRemove },
+        { user_id: userId, remove_movie_id: movieToRemove },
         token
       );
       setWatchlistItem((prev) => ({
         ...prev,
-        movie_ids: prev.movie_ids.filter((id) => id !== movieIdToRemove),
+        movie_ids: prev.movie_ids.filter((id) => id !== movieToRemove),
       }));
-      setMovies((prev) => prev.filter((movie) => movie.id !== movieIdToRemove));
+      setMovies((prev) => prev.filter((movie) => movie.id !== movieToRemove));
+      setMovieToRemove(null); // Clear the movie to remove
+      deleteMovieModalRef.current.close(); // Close the modal
       setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
@@ -76,7 +79,7 @@ function WatchlistSingle({ authenticated }) {
         ...prev,
         is_public: newVisibility,
       }));
-      alert(`Watchlist is now ${newVisibility ? "public" : "private"}!`);
+      // Removed alert as per previous preference for no pop-ups
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update visibility");
     }
@@ -189,6 +192,28 @@ function WatchlistSingle({ authenticated }) {
           Back to Watchlist
         </button>
       </div>
+
+      {/* DaisyUI Modal for Movie Removal Confirmation */}
+      <dialog
+        id="delete_movie_modal"
+        className="modal"
+        ref={deleteMovieModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Removal</h3>
+          <p className="py-4">
+            Are you sure you want to remove this movie from the watchlist?
+          </p>
+          <div className="modal-action">
+            <button onClick={confirmRemoveMovie} className="btn btn-error mr-2">
+              Yes, Remove
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }

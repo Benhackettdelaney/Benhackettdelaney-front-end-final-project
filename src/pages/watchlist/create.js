@@ -1,4 +1,3 @@
-// src/pages/watchlist/create.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createWatchlist } from "../../apis/watchlist";
@@ -37,8 +36,13 @@ function WatchlistCreate({ authenticated }) {
         "Watchlist create error:",
         err.response?.data || err.message
       );
-      setError(err.response?.data?.error || "Failed to create watchlist");
+      if (err.response?.status === 409) {
+        setError("Watchlist title has already been chosen"); // Custom message for 409
+      } else {
+        setError(err.response?.data?.error || "Failed to create watchlist");
+      }
       if (err.response?.status === 401) {
+        setError("Unauthorized: Please log in again.");
         navigate("/"); // Redirect to login on auth failure
       }
     }

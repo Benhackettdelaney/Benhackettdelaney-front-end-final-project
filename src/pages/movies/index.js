@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; 
 import MovieCard from "../../components/movieCard";
-import { fetchAllMovies } from "../../apis/movie"; 
+import { fetchAllMovies } from "../../apis/movie";
 
-function All({ authenticated, search }) {
+function All({ authenticated, search, selectedGenre }) {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [visibleMovies, setVisibleMovies] = useState(32);
@@ -14,16 +14,23 @@ function All({ authenticated, search }) {
   }, []);
 
   useEffect(() => {
-    if (!search || search.length <= 1) {
-      setFilteredMovies(movies);
-    } else {
-      const filtered = movies.filter((movie) =>
+    let filtered = movies;
+
+    if (search && search.length > 1) {
+      filtered = filtered.filter((movie) =>
         movie.movie_title.toLowerCase().includes(search.toLowerCase())
       );
-      setFilteredMovies(filtered);
     }
+
+    if (selectedGenre) {
+      filtered = filtered.filter((movie) =>
+        movie.movie_genres.toLowerCase().includes(selectedGenre.toLowerCase())
+      );
+    }
+
+    setFilteredMovies(filtered);
     setVisibleMovies(32);
-  }, [movies, search]);
+  }, [movies, search, selectedGenre]);
 
   const fetchMovies = async () => {
     const token = localStorage.getItem("token");
@@ -31,13 +38,17 @@ function All({ authenticated, search }) {
       setError("Please log in to view movies");
       return;
     }
+    console.log("Token used for fetching movies:", token);
     try {
-      const moviesData = await fetchAllMovies(token); // Use your API function
+      const moviesData = await fetchAllMovies(token);
       setMovies(moviesData);
       setFilteredMovies(moviesData);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to fetch movies");
-      console.error("Fetch error:", err.response?.data || err.message);
+      setError(err.error || "Failed to fetch movies");
+      if (err.response?.status === 401) {
+        setError("Unauthorized: Please log in again.");
+      }
+      console.error("Fetch error:", err);
     }
   };
 

@@ -1,30 +1,33 @@
-// src/pages/watchlist/index.jsx (or Watchlist.jsx)
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchWatchlists, deleteWatchlist } from "../../apis/watchlist";
+import UserWatchlistCard from "../../components/watchlistCard";
 
 function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
+  const [watchlistToDelete, setWatchlistToDelete] = useState(null); // Track watchlist to delete
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  const deleteWatchlistModalRef = useRef(null); // Ref for delete modal
   const navigate = useNavigate();
 
   const fetchWatchlistData = useCallback(async () => {
     if (!token || !authenticated) {
       setError("Please log in to view your watchlist");
-      navigate("/"); // Redirect to login, not home
+      navigate("/");
       return;
     }
+    console.log("Token used for fetching watchlists:", token);
     try {
       const watchlistData = await fetchWatchlists(userId, token);
       setWatchlist(watchlistData);
     } catch (err) {
-      console.error("Watchlist fetch error:", err.response?.data);
-      setError(err.response?.data?.error || "Failed to fetch watchlist");
+      console.error("Watchlist fetch error:", err);
+      setError(err.error || "Failed to fetch watchlist");
       if (err.response?.status === 401 || err.response?.status === 400) {
         setError("Invalid or missing authentication. Please log in again.");
-        navigate("/"); // Redirect to login
+        navigate("/");
       }
     }
   }, [navigate, userId, token, authenticated]);
@@ -33,57 +36,78 @@ function Watchlist({ authenticated }) {
     fetchWatchlistData();
   }, [fetchWatchlistData]);
 
-  const handleDeleteWatchlist = async (watchlistId) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete watchlist ID ${watchlistId}?`
-      )
-    )
-      return;
+  const handleDeleteWatchlist = (watchlistId) => {
+    setWatchlistToDelete(watchlistId);
+    deleteWatchlistModalRef.current.showModal(); // Show the modal
+  };
 
+  const confirmDeleteWatchlist = async () => {
+    if (!watchlistToDelete) return;
+    console.log("Token used for deleting watchlist:", token);
     try {
-      await deleteWatchlist(watchlistId, userId, token);
-      setWatchlist((prev) => prev.filter((item) => item.id !== watchlistId));
+      await deleteWatchlist(watchlistToDelete, userId, token);
+      setWatchlist((prev) =>
+        prev.filter((item) => item.id !== watchlistToDelete)
+      );
+      setWatchlistToDelete(null); // Clear the watchlist to delete
+      deleteWatchlistModalRef.current.close(); // Close the modal
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete watchlist");
+      setError(err.error || "Failed to delete watchlist");
+      if (err.response?.status === 401) {
+        setError("Unauthorized: Please log in again.");
+      }
     }
   };
 
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">My Watchlists</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="container mx-auto p-8">
+      <h2 className="text-2xl font-bold text-primary mb-4">My Watchlists</h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       {authenticated && (
         <div className="mb-4">
-          <Link
-            to="/watchlist/create"
-            className="bg-green-500 text-white p-2 rounded inline-block"
-          >
+          <Link to="/watchlist/create" className="btn btn-success">
             Create Watchlist
           </Link>
         </div>
       )}
-      <ul className="space-y-4">
-        {watchlist.map((item) => (
-          <li
-            key={item.id}
-            className="p-4 bg-white rounded shadow flex justify-between items-center"
-          >
-            <Link
-              to={`/watchlist/${item.id}`}
-              className="text-blue-500 hover:underline"
-            >
-              {item.title}
-            </Link>
+      {watchlist.length === 0 ? (
+        <p className="text-gray-500">No watchlists available.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {watchlist.map((item) => (
+            <UserWatchlistCard
+              key={item.id}
+              watchlist={item}
+              onDelete={handleDeleteWatchlist}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* DaisyUI Modal for Watchlist Delete Confirmation */}
+      <dialog
+        id="delete_watchlist_modal"
+        className="modal"
+        ref={deleteWatchlistModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Delete</h3>
+          <p className="py-4">
+            Are you sure you want to delete this watchlist?
+          </p>
+          <div className="modal-action">
             <button
-              onClick={() => handleDeleteWatchlist(item.id)}
-              className="bg-red-500 text-white p-1 rounded"
+              onClick={confirmDeleteWatchlist}
+              className="btn btn-error mr-2"
             >
-              Delete
+              Yes, Delete
             </button>
-          </li>
-        ))}
-      </ul>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }
