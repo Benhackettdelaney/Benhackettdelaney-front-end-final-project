@@ -9,10 +9,10 @@ function WatchlistSingle({ authenticated }) {
   const [movies, setMovies] = useState([]);
   const [error, setError] = useState("");
   const [newMovieId, setNewMovieId] = useState("");
-  const [movieToRemove, setMovieToRemove] = useState(null); // Track movie to remove
+  const [movieToRemove, setMovieToRemove] = useState(null); 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const deleteMovieModalRef = useRef(null); // Ref for delete modal
+  const deleteMovieModalRef = useRef(null); 
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ function WatchlistSingle({ authenticated }) {
 
   const handleRemoveMovie = (movieIdToRemove) => {
     setMovieToRemove(movieIdToRemove);
-    deleteMovieModalRef.current.showModal(); // Show the modal
+    deleteMovieModalRef.current.showModal(); 
   };
 
   const confirmRemoveMovie = async () => {
@@ -59,8 +59,8 @@ function WatchlistSingle({ authenticated }) {
         movie_ids: prev.movie_ids.filter((id) => id !== movieToRemove),
       }));
       setMovies((prev) => prev.filter((movie) => movie.id !== movieToRemove));
-      setMovieToRemove(null); // Clear the movie to remove
-      deleteMovieModalRef.current.close(); // Close the modal
+      setMovieToRemove(null); 
+      deleteMovieModalRef.current.close(); 
       setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
@@ -79,7 +79,6 @@ function WatchlistSingle({ authenticated }) {
         ...prev,
         is_public: newVisibility,
       }));
-      // Removed alert as per previous preference for no pop-ups
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update visibility");
     }
@@ -192,8 +191,6 @@ function WatchlistSingle({ authenticated }) {
           Back to Watchlist
         </button>
       </div>
-
-      {/* DaisyUI Modal for Movie Removal Confirmation */}
       <dialog
         id="delete_movie_modal"
         className="modal"

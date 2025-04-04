@@ -21,7 +21,7 @@ function WatchlistCreate({ authenticated }) {
     if (!userId || !token || !authenticated) {
       console.log("Auth failure: ", { userId, token, authenticated });
       setError("Please log in to create a watchlist");
-      navigate("/"); // Redirect to login
+      navigate("/"); 
       return;
     }
     try {
@@ -30,20 +30,20 @@ function WatchlistCreate({ authenticated }) {
       await createWatchlist(requestData, token);
       setFormData({ movie_id: "", title: "" });
       setError("");
-      navigate("/watchlist"); // Redirect to watchlist index
+      navigate("/watchlist"); 
     } catch (err) {
       console.error(
         "Watchlist create error:",
         err.response?.data || err.message
       );
       if (err.response?.status === 409) {
-        setError("Watchlist title has already been chosen"); // Custom message for 409
+        setError("Watchlist title has already been chosen"); 
       } else {
         setError(err.response?.data?.error || "Failed to create watchlist");
       }
       if (err.response?.status === 401) {
         setError("Unauthorized: Please log in again.");
-        navigate("/"); // Redirect to login on auth failure
+        navigate("/"); 
       }
     }
   };

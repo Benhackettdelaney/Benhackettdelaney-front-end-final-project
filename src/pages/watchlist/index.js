@@ -6,10 +6,10 @@ import UserWatchlistCard from "../../components/watchlistCard";
 function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
-  const [watchlistToDelete, setWatchlistToDelete] = useState(null); // Track watchlist to delete
+  const [watchlistToDelete, setWatchlistToDelete] = useState(null); 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const deleteWatchlistModalRef = useRef(null); // Ref for delete modal
+  const deleteWatchlistModalRef = useRef(null); 
   const navigate = useNavigate();
 
   const fetchWatchlistData = useCallback(async () => {
@@ -38,7 +38,7 @@ function Watchlist({ authenticated }) {
 
   const handleDeleteWatchlist = (watchlistId) => {
     setWatchlistToDelete(watchlistId);
-    deleteWatchlistModalRef.current.showModal(); // Show the modal
+    deleteWatchlistModalRef.current.showModal(); 
   };
 
   const confirmDeleteWatchlist = async () => {
@@ -49,8 +49,8 @@ function Watchlist({ authenticated }) {
       setWatchlist((prev) =>
         prev.filter((item) => item.id !== watchlistToDelete)
       );
-      setWatchlistToDelete(null); // Clear the watchlist to delete
-      deleteWatchlistModalRef.current.close(); // Close the modal
+      setWatchlistToDelete(null); 
+      deleteWatchlistModalRef.current.close(); 
     } catch (err) {
       setError(err.error || "Failed to delete watchlist");
       if (err.response?.status === 401) {
@@ -84,7 +84,6 @@ function Watchlist({ authenticated }) {
         </div>
       )}
 
-      {/* DaisyUI Modal for Watchlist Delete Confirmation */}
       <dialog
         id="delete_watchlist_modal"
         className="modal"

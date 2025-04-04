@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import SignOut from "../components/signOut"; 
+import SignOut from "../components/signOut";
+import { fetchCurrentUser } from "../apis/movie"; 
 
 function Profile({ authenticated, onAuthenticated }) {
   const [userData, setUserData] = useState(null);
@@ -18,24 +18,19 @@ function Profile({ authenticated, onAuthenticated }) {
       return;
     }
 
-    const fetchUserData = async () => {
+    const getUserData = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:5000/auth/current-user",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setUserData(response.data);
+        const data = await fetchCurrentUser(token);
+        setUserData(data);
       } catch (err) {
-        console.error("Error fetching user data:", err.response?.data);
-        setError(err.response?.data?.error || "Failed to load profile data");
+        console.error("Error fetching user data:", err);
+        setError(err.error || "Failed to load profile data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
+    getUserData();
   }, [authenticated, navigate, token]);
 
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;

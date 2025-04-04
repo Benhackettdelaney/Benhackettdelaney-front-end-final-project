@@ -1,4 +1,4 @@
-// this renders the PageNotFound page
+
 const PageNotFound = () => {
   return (
     <>

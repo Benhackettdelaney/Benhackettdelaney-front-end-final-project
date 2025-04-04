@@ -74,7 +74,7 @@ export const deleteWatchlist = async (watchlistId, userId, token) => {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
-    return response.data; // Return response.data for consistency
+    return response.data; 
   } catch (error) {
     throw (
       error.response?.data || {

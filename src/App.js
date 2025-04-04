@@ -22,6 +22,7 @@ import PublicWatchlistSingle from "./pages/watchlist/publicSingle";
 import ActorsAll from "./pages/actors/index";
 import ActorCreate from "./pages/actors/create"; 
 import ActorEdit from "./pages/actors/edit"; 
+import ActorSingle from "./pages/actors/single";
 
 
 function App() {
@@ -179,10 +180,10 @@ function App() {
             path="/actors/:actorId/edit"
             element={<ActorEdit authenticated={authenticated} />}
           />
-          {/* <Route
+          <Route
             path="/actors/:actorId"
             element={<ActorSingle authenticated={authenticated} />}
-          /> */}
+          />
           <Route path="*" element={<PageNotFound />} />
           <Route
             path="/home"

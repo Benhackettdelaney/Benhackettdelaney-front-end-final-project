@@ -1,3 +1,4 @@
+//u
 import axios from "axios";
 
 const BASE_URL = "http://127.0.0.1:5000";
@@ -7,7 +8,7 @@ export const createRating = async (userId, movieId, rating, token) => {
     `${BASE_URL}/ratings`,
     { user_id: userId, movie_id: movieId, rating },
     { headers: { Authorization: `Bearer ${token}` } }
-  );
+  );  
   return response.data;
 };
 
