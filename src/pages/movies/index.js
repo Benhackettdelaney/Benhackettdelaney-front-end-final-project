@@ -1,5 +1,6 @@
+// src/pages/movies/index.js
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; 
+import { Link, useLocation } from "react-router-dom";
 import MovieCard from "../../components/movieCard";
 import { fetchAllMovies } from "../../apis/movie";
 
@@ -8,23 +9,26 @@ function All({ authenticated, search, selectedGenre }) {
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [visibleMovies, setVisibleMovies] = useState(32);
   const [error, setError] = useState("");
+  const location = useLocation();
 
   useEffect(() => {
     fetchMovies();
-  }, []);
+  }, [location.pathname]); // Refetch when navigating to /movies
 
   useEffect(() => {
     let filtered = movies;
 
     if (search && search.length > 1) {
       filtered = filtered.filter((movie) =>
-        movie.movie_title.toLowerCase().includes(search.toLowerCase())
+        (movie.movie_title || "").toLowerCase().includes(search.toLowerCase())
       );
     }
 
     if (selectedGenre) {
       filtered = filtered.filter((movie) =>
-        movie.movie_genres.toLowerCase().includes(selectedGenre.toLowerCase())
+        (movie.movie_genres || "")
+          .toLowerCase()
+          .includes(selectedGenre.toLowerCase())
       );
     }
 
@@ -41,14 +45,18 @@ function All({ authenticated, search, selectedGenre }) {
     console.log("Token used for fetching movies:", token);
     try {
       const moviesData = await fetchAllMovies(token);
+      console.log("Fetched movies:", moviesData);
+      // Log specific movie for debugging
+      const movie1546 = moviesData.find((movie) => movie.id === "1546");
+      console.log("Movie ID 1546:", movie1546);
       setMovies(moviesData);
       setFilteredMovies(moviesData);
     } catch (err) {
-      setError(err.error || "Failed to fetch movies");
+      setError(err.response?.data?.error || "Failed to fetch movies");
       if (err.response?.status === 401) {
         setError("Unauthorized: Please log in again.");
       }
-      console.error("Fetch error:", err);
+      console.error("Fetch error:", err.response?.data || err);
     }
   };
 
@@ -73,16 +81,7 @@ function All({ authenticated, search, selectedGenre }) {
       {error && <div className="alert alert-error mb-8">{error}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {filteredMovies.slice(0, visibleMovies).map((movie) => (
-          <MovieCard
-            key={movie.id}
-            movie={{
-              id: movie.id,
-              title: movie.movie_title,
-              genres: movie.movie_genres,
-              ratingsCount: movie.ratings_count,
-              reviewsCount: movie.reviews_count,
-            }}
-          />
+          <MovieCard key={movie.id} movie={movie} />
         ))}
       </div>
       <div className="text-center mt-8 flex justify-center gap-4">

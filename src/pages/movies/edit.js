@@ -1,7 +1,8 @@
+// MovieEdit.js
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, fetchMovie, updateMovie } from "../../apis/movie";
-import { fetchAllActors } from "../../apis/actor"; // Assuming this is the correct path
+import { fetchAllActors } from "../../apis/actor";
 
 function MovieEdit({ authenticated }) {
   const { movieId } = useParams();
@@ -10,6 +11,7 @@ function MovieEdit({ authenticated }) {
     movie_genres: "",
     description: "",
     actor_id: "",
+    image: "bloodborne1.jpg", // Default to only available image
   });
   const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
@@ -44,6 +46,9 @@ function MovieEdit({ authenticated }) {
           movie_genres: movieData.movie_genres,
           description: movieData.description || "",
           actor_id: movieData.actors[0]?.id || "",
+          image: movieData.image_url
+            ? movieData.image_url.split("/").pop()
+            : "bloodborne1.jpg",
         });
 
         const actorData = await fetchAllActors(token);
@@ -73,8 +78,19 @@ function MovieEdit({ authenticated }) {
       setError("Only admins can edit movies");
       return;
     }
+
+    const data = {
+      movie_title: formData.movie_title,
+      movie_genres: formData.movie_genres,
+      description: formData.description,
+      image: formData.image,
+    };
+    if (formData.actor_id) {
+      data.actor_id = formData.actor_id;
+    }
+
     try {
-      await updateMovie(movieId, formData, token);
+      await updateMovie(movieId, data, token);
       setError("");
       navigate("/movies");
     } catch (err) {
@@ -135,15 +151,16 @@ function MovieEdit({ authenticated }) {
             value={formData.actor_id}
             onChange={handleChange}
             className="select select-bordered w-full max-w-xs"
-            required
           >
-            <option value="">Select an Actor</option>
+            <option value="">Select an Actor (optional)</option>
             {actors.map((actor) => (
               <option key={actor.id} value={actor.id}>
                 {actor.name}
               </option>
             ))}
           </select>
+          {/* Hidden input since only one image is available */}
+          <input type="hidden" name="image" value={formData.image} />
           <button type="submit" className="btn btn-active">
             Update Movie
           </button>

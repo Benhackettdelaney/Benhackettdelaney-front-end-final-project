@@ -1,7 +1,8 @@
+// MovieCreate.js
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, createMovie } from "../../apis/movie";
-import { fetchAllActors } from "../../apis/actor"; 
+import { fetchAllActors } from "../../apis/actor";
 
 function MovieCreate({ authenticated }) {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ function MovieCreate({ authenticated }) {
     movie_genres: "",
     description: "",
     actor_id: "",
+    image: "bloodborne1.jpg", // Default to only available image
   });
   const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
@@ -57,6 +59,7 @@ function MovieCreate({ authenticated }) {
       setError("Only admins can create movies");
       return;
     }
+
     try {
       await createMovie(formData, token);
       setFormData({
@@ -65,6 +68,7 @@ function MovieCreate({ authenticated }) {
         movie_genres: "",
         description: "",
         actor_id: "",
+        image: "bloodborne1.jpg",
       });
       setError("");
       navigate("/movies");
@@ -144,6 +148,8 @@ function MovieCreate({ authenticated }) {
               </option>
             ))}
           </select>
+          {/* Hidden input since only one image is available */}
+          <input type="hidden" name="image" value={formData.image} />
           <button type="submit" className="btn btn-active">
             Create Movie
           </button>

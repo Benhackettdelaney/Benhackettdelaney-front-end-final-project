@@ -1,3 +1,4 @@
+// src/pages/movies/single.js
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { createRating } from "../../apis/ratings";
@@ -11,6 +12,7 @@ import {
   deleteReview,
 } from "../../apis/reviews";
 import { removeActorFromMovie } from "../../apis/actor";
+import MovieSingleCard from "../../components/movieSingleCard";
 
 function MovieSingle({ authenticated }) {
   const { movieId } = useParams();
@@ -20,15 +22,15 @@ function MovieSingle({ authenticated }) {
   const [selectedWatchlistId, setSelectedWatchlistId] = useState("");
   const [reviewContent, setReviewContent] = useState("");
   const [editingReviewId, setEditingReviewId] = useState(null);
-  const [actorToRemove, setActorToRemove] = useState(null); // For actor removal confirmation
+  const [actorToRemove, setActorToRemove] = useState(null);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role"); // Check if user is admin
+  const role = localStorage.getItem("role");
   const [error, setError] = useState("");
   const [reviewToDelete, setReviewToDelete] = useState(null);
   const deleteMovieModalRef = useRef(null);
   const deleteReviewModalRef = useRef(null);
-  const deleteActorModalRef = useRef(null); // New ref for actor removal modal
+  const deleteActorModalRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,9 +46,10 @@ function MovieSingle({ authenticated }) {
       console.log("Token used for fetching movie:", token);
       try {
         const response = await fetchMovie(movieId, token);
+        console.log("Fetched movie:", response);
         setMovie(response);
       } catch (err) {
-        setError(err.error || "Failed to fetch movie");
+        setError(err.response?.data?.error || "Failed to fetch movie");
         if (err.response?.status === 401)
           setError("Unauthorized: Please log in again.");
       }
@@ -61,7 +64,7 @@ function MovieSingle({ authenticated }) {
         if (myList) setSelectedWatchlistId(myList.id);
       } catch (err) {
         console.error("Fetch watchlists error:", err);
-        setError(err.error || "Failed to fetch watchlists");
+        setError(err.response?.data?.error || "Failed to fetch watchlists");
         if (err.response?.status === 401)
           setError("Unauthorized: Please log in again.");
       }
@@ -74,7 +77,7 @@ function MovieSingle({ authenticated }) {
         setReviews(response);
       } catch (err) {
         console.error("Fetch reviews error:", err);
-        setError(err.error || "Failed to fetch reviews");
+        setError(err.response?.data?.error || "Failed to fetch reviews");
         if (err.response?.status === 401)
           setError("Unauthorized: Please log in again.");
       }
@@ -107,7 +110,7 @@ function MovieSingle({ authenticated }) {
       const watchlistResponse = await fetchWatchlists(userId, token);
       setWatchlists(watchlistResponse);
     } catch (err) {
-      setError(err.error || "Failed to add to watchlist");
+      setError(err.response?.data?.error || "Failed to add to watchlist");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -123,7 +126,7 @@ function MovieSingle({ authenticated }) {
     try {
       await createRating(userId, movieId, rating, token);
     } catch (err) {
-      setError(err.error || "Failed to rate movie");
+      setError(err.response?.data?.error || "Failed to rate movie");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -145,7 +148,7 @@ function MovieSingle({ authenticated }) {
       deleteMovieModalRef.current.close();
       navigate("/movies");
     } catch (err) {
-      setError(err.error || "Failed to delete movie");
+      setError(err.response?.data?.error || "Failed to delete movie");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -163,7 +166,7 @@ function MovieSingle({ authenticated }) {
       setReviews([...reviews, response]);
       setReviewContent("");
     } catch (err) {
-      setError(err.error || "Failed to add review");
+      setError(err.response?.data?.error || "Failed to add review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -185,7 +188,7 @@ function MovieSingle({ authenticated }) {
       setEditingReviewId(null);
       setReviewContent("");
     } catch (err) {
-      setError(err.error || "Failed to edit review");
+      setError(err.response?.data?.error || "Failed to edit review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -209,7 +212,7 @@ function MovieSingle({ authenticated }) {
       setReviewToDelete(null);
       deleteReviewModalRef.current.close();
     } catch (err) {
-      setError(err.error || "Failed to delete review");
+      setError(err.response?.data?.error || "Failed to delete review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -236,7 +239,9 @@ function MovieSingle({ authenticated }) {
       setActorToRemove(null);
       deleteActorModalRef.current.close();
     } catch (err) {
-      setError(err.error || "Failed to remove actor from movie");
+      setError(
+        err.response?.data?.error || "Failed to remove actor from movie"
+      );
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
     }
@@ -245,7 +250,7 @@ function MovieSingle({ authenticated }) {
   const renderActors = () => (
     <div className="mt-6">
       <h3 className="text-xl mb-4">Actors</h3>
-      {movie.actors && movie.actors.length > 0 ? (
+      {movie && movie.actors && movie.actors.length > 0 ? (
         <div className="flex flex-wrap gap-4">
           {movie.actors.map((actor) => (
             <div key={actor.id} className="flex items-center gap-2">
@@ -275,135 +280,23 @@ function MovieSingle({ authenticated }) {
   if (!movie) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto mt-10">
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="p-4 bg-white rounded shadow">
-        <p>
-          <strong>{movie.movie_title}</strong> ({movie.movie_genres})
-        </p>
-        <p className="mt-2">{movie.description}</p>
-        <div className="mt-2">
-          <select
-            value={selectedWatchlistId}
-            onChange={(e) => setSelectedWatchlistId(e.target.value)}
-            className="p-1 border rounded mr-2"
-          >
-            <option value="">Select Watchlist</option>
-            {watchlists.map((watchlist) => (
-              <option key={watchlist.id} value={watchlist.id}>
-                {watchlist.title}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleAddToWatchlist}
-            className="bg-blue-500 text-white p-1 rounded mr-2"
-          >
-            Add to Watchlist
-          </button>
-        </div>
-        <select
-          onChange={(e) => handleRate(parseFloat(e.target.value))}
-          className="p-1 border rounded mr-2 mt-2"
-        >
-          <option value="">Rate</option>
-          {[1, 2, 3, 4, 5].map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        {authenticated && (
-          <>
-            <button
-              onClick={() => navigate(`/movies/${movieId}/edit`)}
-              className="bg-yellow-500 text-white p-1 rounded mr-2 mt-2"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              className="bg-red-500 text-white p-1 rounded mr-2 mt-2"
-            >
-              Delete
-            </button>
-            <Link
-              to="/watchlist"
-              className="bg-blue-500 text-white p-1 rounded mt-2 inline-block"
-            >
-              Watchlist
-            </Link>
-          </>
-        )}
-      </div>
+    <div className="container mx-auto mt-10 px-4">
+      {error && <div className="alert alert-error mb-8">{error}</div>}
+      <MovieSingleCard
+        movie={movie}
+        watchlists={watchlists}
+        selectedWatchlistId={selectedWatchlistId}
+        setSelectedWatchlistId={setSelectedWatchlistId}
+        handleAddToWatchlist={handleAddToWatchlist}
+        handleRate={handleRate}
+        handleDelete={handleDelete}
+        userId={userId}
+        authenticated={authenticated}
+        role={role}
+        movieId={movieId}
+      />
 
-      {/* Actors Section */}
       {renderActors()}
-
-      {/* DaisyUI Modal for Movie Delete Confirmation */}
-      <dialog
-        id="delete_movie_modal"
-        className="modal"
-        ref={deleteMovieModalRef}
-      >
-        <div className="modal-box">
-          <h3 className="text-lg font-bold">Confirm Delete</h3>
-          <p className="py-4">Are you sure you want to delete this movie?</p>
-          <div className="modal-action">
-            <button onClick={confirmDeleteMovie} className="btn btn-error mr-2">
-              Yes, Delete
-            </button>
-            <form method="dialog">
-              <button className="btn">Cancel</button>
-            </form>
-          </div>
-        </div>
-      </dialog>
-
-      {/* DaisyUI Modal for Review Delete Confirmation */}
-      <dialog
-        id="delete_review_modal"
-        className="modal"
-        ref={deleteReviewModalRef}
-      >
-        <div className="modal-box">
-          <h3 className="text-lg font-bold">Confirm Delete</h3>
-          <p className="py-4">Are you sure you want to delete this review?</p>
-          <div className="modal-action">
-            <button
-              onClick={confirmDeleteReview}
-              className="btn btn-error mr-2"
-            >
-              Yes, Delete
-            </button>
-            <form method="dialog">
-              <button className="btn">Cancel</button>
-            </form>
-          </div>
-        </div>
-      </dialog>
-
-      {/* DaisyUI Modal for Actor Removal Confirmation */}
-      <dialog
-        id="delete_actor_modal"
-        className="modal"
-        ref={deleteActorModalRef}
-      >
-        <div className="modal-box">
-          <h3 className="text-lg font-bold">Confirm Removal</h3>
-          <p className="py-4">
-            Are you sure you want to remove this actor from the movie?
-          </p>
-          <div className="modal-action">
-            <button onClick={confirmRemoveActor} className="btn btn-error mr-2">
-              Yes, Remove
-            </button>
-            <form method="dialog">
-              <button className="btn">Cancel</button>
-            </form>
-          </div>
-        </div>
-      </dialog>
 
       <div className="mt-6">
         <h3 className="text-xl mb-4">Reviews</h3>
@@ -464,6 +357,69 @@ function MovieSingle({ authenticated }) {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <dialog
+        id="delete_movie_modal"
+        className="modal"
+        ref={deleteMovieModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Delete</h3>
+          <p className="py-4">Are you sure you want to delete this movie?</p>
+          <div className="modal-action">
+            <button onClick={confirmDeleteMovie} className="btn btn-error mr-2">
+              Yes, Delete
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog
+        id="delete_review_modal"
+        className="modal"
+        ref={deleteReviewModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Delete</h3>
+          <p className="py-4">Are you sure you want to delete this review?</p>
+          <div className="modal-action">
+            <button
+              onClick={confirmDeleteReview}
+              className="btn btn-error mr-2"
+            >
+              Yes, Delete
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog
+        id="delete_actor_modal"
+        className="modal"
+        ref={deleteActorModalRef}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Confirm Removal</h3>
+          <p className="py-4">
+            Are you sure you want to remove this actor from the movie?
+          </p>
+          <div className="modal-action">
+            <button onClick={confirmRemoveActor} className="btn btn-error mr-2">
+              Yes, Remove
+            </button>
+            <form method="dialog">
+              <button className="btn">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }
