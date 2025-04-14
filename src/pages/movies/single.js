@@ -1,4 +1,3 @@
-// src/pages/movies/single.js
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { createRating } from "../../apis/ratings";
@@ -251,14 +250,17 @@ function MovieSingle({ authenticated }) {
     <div className="mt-6">
       <h3 className="text-xl mb-4">Actors</h3>
       {movie && movie.actors && movie.actors.length > 0 ? (
-        <div className="flex flex-wrap gap-4">
+        <ul className="list-disc pl-5">
           {movie.actors.map((actor) => (
-            <div key={actor.id} className="flex items-center gap-2">
+            <li
+              key={actor.id}
+              className="flex justify-between items-center mb-2"
+            >
               <Link
                 to={`/actors/${actor.id}`}
-                className="btn btn-outline btn-primary"
+                className="text-blue-500 underline"
               >
-                {actor.name}
+                {actor.name || "Unknown Actor"}
               </Link>
               {role === "admin" && (
                 <button
@@ -268,9 +270,9 @@ function MovieSingle({ authenticated }) {
                   Remove
                 </button>
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
         <p>No actors assigned yet.</p>
       )}

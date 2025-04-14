@@ -1,4 +1,3 @@
-// src/pages/Home.js
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchTopRankedMovies } from "../apis/ranking";
@@ -8,37 +7,49 @@ import MovieCard from "../components/movieCard";
 function Home({ authenticated, onAuthenticated }) {
   const [topMovies, setTopMovies] = useState([]);
   const [userRatings, setUserRatings] = useState([]);
-  const [hasEverHadRatings, setHasEverHadRatings] = useState(false); 
+  const [hasEverHadRatings, setHasEverHadRatings] = useState(false);
   const [error, setError] = useState("");
   const [editingRatingId, setEditingRatingId] = useState(null);
   const [newRatingValue, setNewRatingValue] = useState("");
-  const [ratingToDelete, setRatingToDelete] = useState(null); 
+  const [ratingToDelete, setRatingToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-  const deleteRatingModalRef = useRef(null); 
+  const deleteRatingModalRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!userId || !authenticated || !token) {
       setError("Please log in to see your movie recommendations and ratings");
+      setIsLoading(false);
       navigate("/");
       return;
     }
 
     const fetchRatings = async () => {
-      console.log("Token used for ratings:", token);
       try {
         const data = await fetchUserRatings(userId, token);
-        setUserRatings(data.rated_movies);
-        if (data.rated_movies.length > 0) {
-          setHasEverHadRatings(true); 
+        console.log("User ratings response:", data.rated_movies); // Debug log
+        // Normalize and filter ratings
+        const validRatings = data.rated_movies
+          .filter((rating) => rating.movie_id || rating.id)
+          .map((rating) => ({
+            ...rating,
+            movie_title: rating.movie_title || rating.title || "Untitled",
+            image_url: rating.image_url || "/static/movies/bloodborne1.jpg",
+          }));
+        setUserRatings(validRatings);
+        if (validRatings.length > 0) {
+          setHasEverHadRatings(true);
         }
       } catch (err) {
         setError(err.error || "Failed to fetch user ratings");
         if (err.response?.status === 401) {
           setError("Unauthorized: Please log in again.");
         }
+      } finally {
+        setTimeout(() => setIsLoading(false), 1000);
       }
     };
 
@@ -48,11 +59,16 @@ function Home({ authenticated, onAuthenticated }) {
   useEffect(() => {
     if (userRatings.length > 0 || hasEverHadRatings) {
       const fetchTopMovies = async () => {
-        console.log("Token used for top movies:", token);
         try {
           const data = await fetchTopRankedMovies(userId, token);
-          console.log("Top Movies Data:", data.top_ranked_movies);
-          setTopMovies(data.top_ranked_movies);
+          console.log("Top movies response:", data.top_ranked_movies); // Debug log
+          // Normalize topMovies data
+          const normalizedMovies = data.top_ranked_movies.map((movie) => ({
+            ...movie,
+            movie_title: movie.title || movie.movie_title || "Untitled",
+            image_url: movie.image_url || "/static/movies/bloodborne1.jpg",
+          }));
+          setTopMovies(normalizedMovies);
         } catch (err) {
           setError(err.error || "Failed to fetch top movies");
           if (err.response?.status === 401) {
@@ -63,7 +79,7 @@ function Home({ authenticated, onAuthenticated }) {
 
       fetchTopMovies();
     } else {
-      setTopMovies([]); 
+      setTopMovies([]);
     }
 
     if (userRatings.length > 0) {
@@ -83,7 +99,6 @@ function Home({ authenticated, onAuthenticated }) {
         setError("Rating must be a number between 1.0 and 5.0");
         return;
       }
-      console.log("Token used for updating rating:", token);
       await updateRating(ratingId, ratingValue, token);
       setUserRatings(
         userRatings.map((rating) =>
@@ -103,19 +118,18 @@ function Home({ authenticated, onAuthenticated }) {
 
   const handleDeleteRating = (ratingId) => {
     setRatingToDelete(ratingId);
-    deleteRatingModalRef.current.showModal(); 
+    deleteRatingModalRef.current.showModal();
   };
 
   const confirmDeleteRating = async () => {
     if (!ratingToDelete) return;
     try {
-      console.log("Token used for deleting rating:", token);
       await deleteRating(ratingToDelete, token);
       setUserRatings(
         userRatings.filter((rating) => rating.id !== ratingToDelete)
       );
-      setRatingToDelete(null); 
-      deleteRatingModalRef.current.close(); 
+      setRatingToDelete(null);
+      deleteRatingModalRef.current.close();
       setError("");
     } catch (err) {
       setError(err.error || "Failed to delete rating");
@@ -129,7 +143,7 @@ function Home({ authenticated, onAuthenticated }) {
     if (movies.length === 0 && !error) {
       return (
         <div className="text-center text-gray-500">
-          Loading recommended movies...
+          No recommended movies available. Try rating some movies!
         </div>
       );
     }
@@ -138,7 +152,7 @@ function Home({ authenticated, onAuthenticated }) {
       <div className="flex flex-wrap gap-8 justify-center">
         {movies.map((movie) => (
           <div
-            key={movie.id || movie.title || Math.random()}
+            key={movie.id || movie.movie_title || Math.random()}
             className="w-1/4 flex-shrink-0 px-4"
           >
             <MovieCard movie={movie} to={`/movies/${movie.id}`} />
@@ -147,6 +161,14 @@ function Home({ authenticated, onAuthenticated }) {
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -185,7 +207,13 @@ function Home({ authenticated, onAuthenticated }) {
                   <div key={rating.id} className="w-1/4 flex-shrink-0 px-4">
                     <MovieCard
                       movie={rating}
-                      to={`/movies/${rating.movie_id || rating.id}`}
+                      to={`/movies/${
+                        rating.movie_id ||
+                        (typeof rating.id === "string" &&
+                        rating.id !== "Unknown"
+                          ? rating.id
+                          : "#")
+                      }`}
                       showActions={true}
                       onEdit={() => handleEditRating(rating)}
                       onDelete={() => handleDeleteRating(rating.id)}

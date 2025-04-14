@@ -1,4 +1,3 @@
-// 
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./index.css";
@@ -20,10 +19,9 @@ import Navbar from "./components/navBar";
 import PublicWatchlists from "./pages/watchlist/public";
 import PublicWatchlistSingle from "./pages/watchlist/publicSingle";
 import ActorsAll from "./pages/actors/index";
-import ActorCreate from "./pages/actors/create"; 
-import ActorEdit from "./pages/actors/edit"; 
+import ActorCreate from "./pages/actors/create";
+import ActorEdit from "./pages/actors/edit";
 import ActorSingle from "./pages/actors/single";
-
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -36,19 +34,16 @@ function App() {
     const role = localStorage.getItem("role");
 
     if (token && userId && role) {
-      console.log("Token used for initial validation:", token);
       axios
         .get("http://127.0.0.1:5000/auth/current-user", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
-          console.log("Token validated:", response.data);
           setAuthenticated(true);
           localStorage.setItem("userId", response.data.user_id);
           localStorage.setItem("role", response.data.role);
         })
         .catch((err) => {
-          console.error("Token validation failed:", err.response?.data);
           setAuthenticated(false);
           localStorage.removeItem("token");
           localStorage.removeItem("userId");
@@ -59,20 +54,6 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log(
-        "Authenticated state:",
-        authenticated,
-        "Token:",
-        localStorage.getItem("token"),
-        "Role:",
-        localStorage.getItem("role")
-      );
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [authenticated]);
-
   const onAuthenticated = (auth, authData) => {
     setAuthenticated(auth);
     if (auth && authData) {
@@ -81,14 +62,10 @@ function App() {
       localStorage.setItem("token", cleanToken);
       localStorage.setItem("userId", userId);
       localStorage.setItem("role", role);
-      console.log("Token set in localStorage:", cleanToken);
-      console.log("UserId set in localStorage:", userId);
-      console.log("Role set in localStorage:", role);
     } else {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("role");
-      console.log("Token, UserId, and Role removed from localStorage");
     }
   };
 

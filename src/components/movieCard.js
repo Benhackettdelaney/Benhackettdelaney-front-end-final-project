@@ -1,4 +1,3 @@
-// MovieCard.js
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -14,23 +13,6 @@ const MovieCard = ({
   onSave,
   onCancel,
 }) => {
-  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-  // if (!process.env.REACT_APP_API_URL) {
-  //   console.warn(
-  //     "REACT_APP_API_URL is undefined, using fallback: http://localhost:5000"
-  //   );
-  // }
-
-  const defaultImage = `${apiUrl}/static/movies/bloodborne1.jpg`;
-
-  // Debug movie data
-  console.log("MovieCard data:", movie);
-
-  // Ensure image URL is valid
-  const imageUrl =
-    movie && movie.image_url ? `${apiUrl}${movie.image_url}` : defaultImage;
-
   // Use movie_title or title, movie_genres or genres
   const title =
     movie && (movie.movie_title || movie.title)
@@ -40,25 +22,38 @@ const MovieCard = ({
     movie && (movie.movie_genres || movie.genres)
       ? movie.movie_genres || movie.genres
       : "No genres";
+  const displayImageUrl = movie.image_url
+    ? `http://127.0.0.1:5000${movie.image_url}`
+    : "http://127.0.0.1:5000/static/movies/bloodborne1.jpg"; // Fallback
 
   return (
     <div className="card bg-base-100 w-96 shadow-sm hover:shadow-lg transition-shadow relative">
       <figure className="relative w-full h-64 overflow-hidden">
-        <Link to={to || (movie && movie.id ? `/movies/${movie.id}` : "#")}>
+        <Link
+          to={
+            to ||
+            (movie && movie.id && movie.id !== "Unknown"
+              ? `/movies/${movie.id}`
+              : "#")
+          }
+          state={{ imageUrl: displayImageUrl }} // Pass image URL to MovieSingleCard
+        >
           <img
-            src={imageUrl}
+            src={displayImageUrl}
             alt={title}
-            className="w-full h-full object-contain bg-gray-100"
-            onError={(e) => {
-              console.warn(`Failed to load image: ${imageUrl}`);
-              e.target.src = defaultImage;
-            }}
+            className="w-full h-full object-cover rounded-lg shadow-md"
           />
         </Link>
       </figure>
       <div className="card-body py-6">
         <Link
-          to={to || (movie && movie.id ? `/movies/${movie.id}` : "#")}
+          to={
+            to ||
+            (movie && movie.id && movie.id !== "Unknown"
+              ? `/movies/${movie.id}`
+              : "#")
+          }
+          state={{ imageUrl: displayImageUrl }} // Pass image URL to MovieSingleCard
           className="block"
         >
           <h2 className="card-title text-black hover:text-primary">{title}</h2>
