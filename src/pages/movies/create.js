@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, createMovie } from "../../apis/movie";
@@ -11,7 +10,7 @@ function MovieCreate({ authenticated }) {
     movie_genres: "",
     description: "",
     actor_id: "",
-    image: "bloodborne1.jpg", 
+    image: "bloodborne1.jpg",
   });
   const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
@@ -19,6 +18,27 @@ function MovieCreate({ authenticated }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
+  const genres = [
+    "Action",
+    "Adventure",
+    "Animation",
+    "Children",
+    "Comedy",
+    "Crime",
+    "Documentary",
+    "Drama",
+    "Fantasy",
+    "Film-Noir",
+    "Horror",
+    "Musical",
+    "Mystery",
+    "Romance",
+    "Sci-Fi",
+    "Thriller",
+    "War",
+    "Western",
+  ];
 
   useEffect(() => {
     if (!token || !authenticated) {
@@ -53,10 +73,25 @@ function MovieCreate({ authenticated }) {
     }));
   };
 
+  const validateForm = () => {
+    if (!formData.id.trim()) return "Movie ID is required";
+    if (!formData.movie_title.trim()) return "Movie title is required";
+    if (!formData.movie_genres) return "Genre is required";
+    if (!formData.description.trim()) return "Description is required";
+    if (!formData.actor_id) return "Actor is required";
+    return "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAdmin || !authenticated) {
       setError("Only admins can create movies");
+      return;
+    }
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -72,6 +107,7 @@ function MovieCreate({ authenticated }) {
       });
       setError("");
       navigate("/movies");
+      window.alert("Movie created successfully!");
     } catch (err) {
       console.error("Movie create error:", err.response?.data);
       setError(err.response?.data?.error || "Failed to create movie");
@@ -118,21 +154,27 @@ function MovieCreate({ authenticated }) {
             className="input input-bordered w-full max-w-xs"
             required
           />
-          <input
-            type="text"
+          <select
             name="movie_genres"
-            placeholder="Genres (comma-separated)"
             value={formData.movie_genres}
             onChange={handleChange}
-            className="input input-bordered w-full max-w-xs"
+            className="select select-bordered w-full max-w-xs"
             required
-          />
+          >
+            <option value="">Select a Genre</option>
+            {genres.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </select>
           <textarea
             name="description"
-            placeholder="Description (optional)"
+            placeholder="Description"
             value={formData.description}
             onChange={handleChange}
             className="input input-bordered w-full max-w-xs h-24"
+            required
           />
           <select
             name="actor_id"
@@ -148,7 +190,7 @@ function MovieCreate({ authenticated }) {
               </option>
             ))}
           </select>
-          <input type="hidden" name="image" value={formData.image} />
+          <input type="hidden" name="image" value="bloodborne1.jpg" />
           <button type="submit" className="btn btn-active">
             Create Movie
           </button>

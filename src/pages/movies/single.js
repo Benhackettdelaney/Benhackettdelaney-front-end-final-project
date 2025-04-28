@@ -48,6 +48,7 @@ function MovieSingle({ authenticated }) {
         console.log("Fetched movie:", response);
         setMovie(response);
       } catch (err) {
+        console.error("Fetch movie error:", err);
         setError(err.response?.data?.error || "Failed to fetch movie");
         if (err.response?.status === 401)
           setError("Unauthorized: Please log in again.");
@@ -110,9 +111,16 @@ function MovieSingle({ authenticated }) {
       setWatchlists(watchlistResponse);
       window.alert("Movie added to watchlist successfully!");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add to watchlist");
-      if (err.response?.status === 401)
-        setError("Unauthorized: Please log in again.");
+      console.error("Add to watchlist error:", {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+        headers: err.response?.headers,
+      });
+      setError(
+        err.response?.data?.error || err.message || "Movie is already in this Watchlist"
+      );
     }
   };
 
@@ -127,6 +135,7 @@ function MovieSingle({ authenticated }) {
       await createRating(userId, movieId, rating, token);
       window.alert("Movie rated successfully!");
     } catch (err) {
+      console.error("Rate movie error:", err);
       setError(err.response?.data?.error || "Failed to rate movie");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
@@ -150,6 +159,7 @@ function MovieSingle({ authenticated }) {
       window.alert("Movie deleted successfully!");
       navigate("/movies");
     } catch (err) {
+      console.error("Delete movie error:", err);
       setError(err.response?.data?.error || "Failed to delete movie");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
@@ -169,6 +179,7 @@ function MovieSingle({ authenticated }) {
       setReviewContent("");
       window.alert("Review added successfully!");
     } catch (err) {
+      console.error("Add review error:", err);
       setError(err.response?.data?.error || "Failed to add review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
@@ -192,6 +203,7 @@ function MovieSingle({ authenticated }) {
       setReviewContent("");
       window.alert("Review updated successfully!");
     } catch (err) {
+      console.error("Edit review error:", err);
       setError(err.response?.data?.error || "Failed to edit review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
@@ -217,6 +229,7 @@ function MovieSingle({ authenticated }) {
       deleteReviewModalRef.current.close();
       window.alert("Review deleted successfully!");
     } catch (err) {
+      console.error("Delete review error:", err);
       setError(err.response?.data?.error || "Failed to delete review");
       if (err.response?.status === 401)
         setError("Unauthorized: Please log in again.");
@@ -245,6 +258,7 @@ function MovieSingle({ authenticated }) {
       deleteActorModalRef.current.close();
       window.alert("Actor removed successfully!");
     } catch (err) {
+      console.error("Remove actor error:", err);
       setError(
         err.response?.data?.error || "Failed to remove actor from movie"
       );

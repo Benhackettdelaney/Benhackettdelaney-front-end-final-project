@@ -30,7 +30,8 @@ function ActorsAll({ authenticated }) {
         const moviesData = await fetchAllMovies(token);
         setMovies(moviesData);
       } catch (err) {
-        setError(err.message || "Failed to fetch data");
+        console.error("Fetch data error:", err);
+        setError(err.response?.data?.error || "Failed to fetch data");
       }
     };
 
@@ -50,30 +51,57 @@ function ActorsAll({ authenticated }) {
     try {
       await addActorToMovie(selectedMovieId, actorId, token);
       setError("");
+      window.alert("Actor added to movie successfully!");
     } catch (err) {
-      setError(err.message || "Failed to add actor to movie");
+      console.error("Add to movie error:", {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      setError(err.response?.data?.error || "Failed to add actor to movie");
     }
   };
 
   const handleDelete = (actorId) => {
+    console.log("Delete button triggered in ActorsAll for actor ID:", actorId, {
+      timestamp: new Date().toISOString(),
+      role: role,
+      callStack: new Error().stack, // Log call stack for debugging
+    });
     if (!role || role !== "admin") {
       setError("Only admins can delete actors");
+      console.log("Non-admin attempted delete for actor ID:", actorId);
       return;
     }
     setActorToDelete(actorId);
+    setError(""); // Clear any existing error to prevent UI confusion
     deleteActorModalRef.current.showModal();
   };
 
   const confirmDeleteActor = async () => {
     if (!actorToDelete) return;
     try {
+      console.log("Confirming deletion for actor ID:", actorToDelete, {
+        timestamp: new Date().toISOString(),
+      });
       await deleteActor(actorToDelete, token);
       setActors(actors.filter((a) => a.id !== actorToDelete));
       setActorToDelete(null);
       deleteActorModalRef.current.close();
+      // Delay alert to ensure modal close animation completes
+      setTimeout(() => {
+        window.alert("Actor deleted successfully!");
+      }, 300);
       setError("");
     } catch (err) {
-      setError(err.message || "Failed to delete actor");
+      console.error("Delete actor error:", {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      setError(err.response?.data?.error || "Failed to delete actor");
     }
   };
 

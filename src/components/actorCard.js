@@ -44,8 +44,8 @@ const ActorCard = ({
           <div className="card-actions justify-end mt-4">
             <button
               onClick={() => {
+                console.log("Add to Movie clicked for actor ID:", actor.id);
                 onAddToMovie(actor.id);
-                window.alert("Actor assigned to movie successfully!");
               }}
               className="btn btn-primary text-white"
               disabled={!selectedMovieId}
@@ -60,8 +60,8 @@ const ActorCard = ({
             </Link>
             <button
               onClick={() => {
+                console.log("Delete clicked for actor ID:", actor.id);
                 onDelete(actor.id);
-                window.alert("Actor deleted successfully!");
               }}
               className="btn btn-error text-white"
             >

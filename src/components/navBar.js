@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, } from "react-router-dom";
 import SignOut from "./signOut";
 
 const Navbar = ({
@@ -11,8 +11,8 @@ const Navbar = ({
   onGenreSelect,
 }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const role = localStorage.getItem("role");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     console.log("Navbar rendered for path:", location.pathname);
@@ -42,6 +42,15 @@ const Navbar = ({
     "War",
     "Western",
   ];
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleGenreSelect = (genre) => {
+    onGenreSelect(genre);
+    setIsDropdownOpen(false); // Close dropdown on selection
+  };
 
   return (
     <div className="navbar bg-base-100 shadow-sm">
@@ -98,37 +107,33 @@ const Navbar = ({
               onChange={onHandleChange}
               className="input input-bordered w-24 md:w-auto"
             />
-            <div className="dropdown">
-              <label tabIndex={0} className="btn btn-ghost">
+            <div className="relative">
+              <button className="btn btn-ghost" onClick={toggleDropdown}>
                 Genres
-              </label>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-20"
-              >
-                <li>
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 menu p-2 shadow bg-base-100 rounded-box w-52 z-20">
                   <button
-                    className={`w-full text-left ${
+                    className={`w-full text-left p-2 ${
                       !selectedGenre ? "btn-active" : ""
                     }`}
-                    onClick={() => onGenreSelect("")}
+                    onClick={() => handleGenreSelect("")}
                   >
                     All Genres
                   </button>
-                </li>
-                {genres.map((genre) => (
-                  <li key={genre}>
+                  {genres.map((genre) => (
                     <button
-                      className={`w-full text-left ${
+                      key={genre}
+                      className={`w-full text-left p-2 ${
                         selectedGenre === genre ? "btn-active" : ""
                       }`}
-                      onClick={() => onGenreSelect(genre)}
+                      onClick={() => handleGenreSelect(genre)}
                     >
                       {genre}
                     </button>
-                  </li>
-                ))}
-              </ul>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}

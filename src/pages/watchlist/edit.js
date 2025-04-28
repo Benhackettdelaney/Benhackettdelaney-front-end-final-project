@@ -36,33 +36,56 @@ function WatchlistEdit({ authenticated }) {
     }));
   };
 
+  const validateForm = () => {
+    if (!formData.title.trim()) return "Title is required";
+    return "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!userId || !token || !authenticated) {
+      setError("Please log in to edit watchlists");
+      navigate("/");
+      return;
+    }
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       const requestData = { ...formData, user_id: userId };
       await updateWatchlist(watchlistId, requestData, token);
+      setError("");
       navigate("/watchlist");
+      window.alert("Watchlist updated successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to update watchlist item");
     }
   };
 
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">Edit Watchlist Item</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="container mx-auto mt-10 p-6">
+      <h2 className="text-2xl mb-4">Edit Watchlist</h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       {authenticated ? (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={handleSubmit} className="mb-6 space-y-4">
           <input
             type="text"
             name="title"
             placeholder="Watchlist Title"
             value={formData.title}
             onChange={handleChange}
-            className="p-2 border rounded mr-2"
+            className="p-4 border rounded mr-2 w-full max-w-xs"
+            required
           />
-          <button type="submit" className="bg-green-500 text-white p-2 rounded">
-            Update Watchlist Item
+          <button
+            type="submit"
+            className="bg-green-500 text-white p-4 rounded mt-4"
+          >
+            Update Watchlist
           </button>
         </form>
       ) : (
@@ -70,7 +93,7 @@ function WatchlistEdit({ authenticated }) {
       )}
       <button
         onClick={() => navigate("/watchlist")}
-        className="bg-gray-500 text-white p-2 rounded"
+        className="bg-gray-500 text-white p-4 rounded mt-4"
       >
         Back to Watchlist
       </button>

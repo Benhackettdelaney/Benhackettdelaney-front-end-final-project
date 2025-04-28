@@ -33,7 +33,7 @@ function WatchlistSingle({ authenticated }) {
         const movieData = await Promise.all(moviePromises);
         setMovies(movieData);
       } catch (err) {
-        console.error("Fetch watchlist error:", err.response?.data);
+        console.error("Fetch watchlist error:", err);
         setError(err.response?.data?.error || "Failed to fetch watchlist item");
       }
     };
@@ -63,6 +63,7 @@ function WatchlistSingle({ authenticated }) {
       deleteMovieModalRef.current.close();
       setError("");
     } catch (err) {
+      console.error("Remove movie error:", err);
       setError(err.response?.data?.error || "Failed to remove movie");
     }
   };
@@ -80,6 +81,7 @@ function WatchlistSingle({ authenticated }) {
         is_public: newVisibility,
       }));
     } catch (err) {
+      console.error("Toggle visibility error:", err);
       setError(err.response?.data?.error || "Failed to update visibility");
     }
   };
@@ -105,14 +107,16 @@ function WatchlistSingle({ authenticated }) {
       setNewMovieId("");
       setError("");
     } catch (err) {
-      console.error("Add movie error:", err.response?.data);
-      if (err.response?.status === 409) {
-        setError("This movie is already in the watchlist.");
-      } else if (err.response?.status === 404) {
-        setError("Movie not found.");
-      } else {
-        setError(err.response?.data?.error || "Failed to add movie");
-      }
+      console.error("Add movie error:", {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+        headers: err.response?.headers,
+      });
+      setError(
+        err.response?.data?.error || err.message || "Movie is already in this Watchlist"
+      );
     }
   };
 
