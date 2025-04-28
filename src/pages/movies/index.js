@@ -85,29 +85,37 @@ function All({ authenticated, search, selectedGenre }) {
         )}
       </div>
       {error && <div className="alert alert-error mb-8">{error}</div>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-24 gap-y-12 relative z-10">
-        {filteredMovies.slice(0, visibleMovies).map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
-      <div className="text-center mt-8 flex justify-center gap-4">
-        {visibleMovies < filteredMovies.length && (
-          <button
-            onClick={handleShowMore}
-            className="btn btn-primary text-white"
-          >
-            Show More
-          </button>
-        )}
-        {visibleMovies > 32 && (
-          <button
-            onClick={handleShowLess}
-            className="btn btn-secondary text-white"
-          >
-            Show Less
-          </button>
-        )}
-      </div>
+      {filteredMovies.length === 0 && search.length > 0 ? (
+        <p className="text-center text-lg text-gray-500 mt-8">
+          Movie not found
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-24 gap-y-12 relative z-10">
+            {filteredMovies.slice(0, visibleMovies).map((movie) => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
+          <div className="text-center mt-8 flex justify-center gap-4">
+            {visibleMovies < filteredMovies.length && (
+              <button
+                onClick={handleShowMore}
+                className="btn btn-primary text-white"
+              >
+                Show More
+              </button>
+            )}
+            {visibleMovies > 32 && (
+              <button
+                onClick={handleShowLess}
+                className="btn btn-secondary text-white"
+              >
+                Show Less
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

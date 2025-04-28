@@ -39,7 +39,7 @@ function Profile({ authenticated, onAuthenticated }) {
   if (error) {
     return (
       <div className="container mx-auto mt-10 p-6">
-        <p className="text-red-500 text-center">error</p>
+        <p className="text-red-500 text-center">{error}</p>
         <div className="flex justify-center">
           <button
             onClick={() => navigate("/")}
@@ -68,7 +68,9 @@ function Profile({ authenticated, onAuthenticated }) {
 
   return (
     <div className="container mx-auto mt-10 p-6 space-y-6 text-white text-center">
-      <h2 className="text-2xl mb-4 text-center">User Profile</h2>
+      <h2 className="text-3xl font-bold text-primary mb-6 text-left">
+        User Profile
+      </h2>
       <div className="w-40 h-40 rounded-full mx-auto mt-4 mb-4">
         <img
           src={
@@ -99,14 +101,13 @@ function Profile({ authenticated, onAuthenticated }) {
       <div className="flex justify-center pt-4">
         <SignOut onAuthenticated={onAuthenticated} />
       </div>
-      <div className="flex justify-center">
-        <button
-          onClick={() => navigate("/home")}
-          className="bg-gray-500 text-white p-2 rounded mt-4"
-        >
-          Back to Home
-        </button>
-      </div>
+      <div className="flex justify-center"></div>
+      <button
+        onClick={() => navigate("/home")}
+        className="bg-gray-500 text-white p-2 rounded mt-4"
+      >
+        Back to Home
+      </button>
     </div>
   );
 }

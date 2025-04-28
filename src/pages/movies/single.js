@@ -119,7 +119,9 @@ function MovieSingle({ authenticated }) {
         headers: err.response?.headers,
       });
       setError(
-        err.response?.data?.error || err.message || "Movie is already in this Watchlist"
+        err.response?.data?.error ||
+          err.message ||
+          "Movie is already in this Watchlist"
       );
     }
   };
@@ -256,7 +258,7 @@ function MovieSingle({ authenticated }) {
       });
       setActorToRemove(null);
       deleteActorModalRef.current.close();
-      window.alert("Actor removed successfully!");
+      window.alert("Actor removed from movie successfully!");
     } catch (err) {
       console.error("Remove actor error:", err);
       setError(

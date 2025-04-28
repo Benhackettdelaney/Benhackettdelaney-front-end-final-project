@@ -16,6 +16,7 @@ import PageNotFound from "./pages/pageNotFound";
 import Home from "./pages/home";
 import Profile from "./pages/userProfile";
 import Navbar from "./components/navBar";
+import Footer from "./components/footer";
 import PublicWatchlists from "./pages/watchlist/public";
 import PublicWatchlistSingle from "./pages/watchlist/publicSingle";
 import ActorsAll from "./pages/actors/index";
@@ -187,6 +188,7 @@ function App() {
           />
         </Routes>
       </div>
+      <Footer />
     </Router>
   );
 }

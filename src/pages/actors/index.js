@@ -67,7 +67,7 @@ function ActorsAll({ authenticated }) {
     console.log("Delete button triggered in ActorsAll for actor ID:", actorId, {
       timestamp: new Date().toISOString(),
       role: role,
-      callStack: new Error().stack, // Log call stack for debugging
+      callStack: new Error().stack, 
     });
     if (!role || role !== "admin") {
       setError("Only admins can delete actors");
@@ -75,7 +75,7 @@ function ActorsAll({ authenticated }) {
       return;
     }
     setActorToDelete(actorId);
-    setError(""); // Clear any existing error to prevent UI confusion
+    setError(""); 
     deleteActorModalRef.current.showModal();
   };
 
@@ -89,7 +89,6 @@ function ActorsAll({ authenticated }) {
       setActors(actors.filter((a) => a.id !== actorToDelete));
       setActorToDelete(null);
       deleteActorModalRef.current.close();
-      // Delay alert to ensure modal close animation completes
       setTimeout(() => {
         window.alert("Actor deleted successfully!");
       }, 300);
