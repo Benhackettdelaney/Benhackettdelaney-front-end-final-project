@@ -49,7 +49,7 @@ const Navbar = ({
 
   const handleGenreSelect = (genre) => {
     onGenreSelect(genre);
-    setIsDropdownOpen(false); // Close dropdown on selection
+    setIsDropdownOpen(false); 
   };
 
   return (
