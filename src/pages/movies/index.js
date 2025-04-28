@@ -75,29 +75,35 @@ function All({ authenticated, search, selectedGenre }) {
   }
 
   return (
-    <div className="container mx-auto p-8">
+    <div className="w-full px-16 py-8">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold text-primary">Movies</h2>
         {authenticated && role === "admin" && (
-          <Link to="/movies/create" className="btn btn-success">
+          <Link to="/movies/create" className="btn btn-success text-white">
             Create New Movie
           </Link>
         )}
       </div>
       {error && <div className="alert alert-error mb-8">{error}</div>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-24 gap-y-12 relative z-10">
         {filteredMovies.slice(0, visibleMovies).map((movie) => (
           <MovieCard key={movie.id} movie={movie} />
         ))}
       </div>
       <div className="text-center mt-8 flex justify-center gap-4">
         {visibleMovies < filteredMovies.length && (
-          <button onClick={handleShowMore} className="btn btn-primary">
+          <button
+            onClick={handleShowMore}
+            className="btn btn-primary text-white"
+          >
             Show More
           </button>
         )}
         {visibleMovies > 32 && (
-          <button onClick={handleShowLess} className="btn btn-secondary">
+          <button
+            onClick={handleShowLess}
+            className="btn btn-secondary text-white"
+          >
             Show Less
           </button>
         )}

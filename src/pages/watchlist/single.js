@@ -9,10 +9,10 @@ function WatchlistSingle({ authenticated }) {
   const [movies, setMovies] = useState([]);
   const [error, setError] = useState("");
   const [newMovieId, setNewMovieId] = useState("");
-  const [movieToRemove, setMovieToRemove] = useState(null); 
+  const [movieToRemove, setMovieToRemove] = useState(null);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const deleteMovieModalRef = useRef(null); 
+  const deleteMovieModalRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ function WatchlistSingle({ authenticated }) {
 
   const handleRemoveMovie = (movieIdToRemove) => {
     setMovieToRemove(movieIdToRemove);
-    deleteMovieModalRef.current.showModal(); 
+    deleteMovieModalRef.current.showModal();
   };
 
   const confirmRemoveMovie = async () => {
@@ -59,8 +59,8 @@ function WatchlistSingle({ authenticated }) {
         movie_ids: prev.movie_ids.filter((id) => id !== movieToRemove),
       }));
       setMovies((prev) => prev.filter((movie) => movie.id !== movieToRemove));
-      setMovieToRemove(null); 
-      deleteMovieModalRef.current.close(); 
+      setMovieToRemove(null);
+      deleteMovieModalRef.current.close();
       setError("");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to remove movie");
@@ -119,10 +119,10 @@ function WatchlistSingle({ authenticated }) {
   if (!watchlistItem) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto mt-10">
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="p-4 bg-white rounded shadow">
-        <h2 className="text-2xl mb-4">{watchlistItem.title}</h2>
+    <div className="container mx-auto mt-10 p-10">
+      {error && <p className="text-red-500 mb-6">{error}</p>}
+      <div className="p-8 bg-gray-800 rounded shadow text-white">
+        <h2 className="text-2xl mb-8">{watchlistItem.title}</h2>
         <p>
           Visibility: {watchlistItem.is_public ? "Public" : "Private"}
           {authenticated && (
@@ -134,13 +134,13 @@ function WatchlistSingle({ authenticated }) {
             </button>
           )}
         </p>
-        <p>Movies in this watchlist:</p>
+        <p className="mt-4 pb-5">Movies in this watchlist:</p>
         {movies.length > 0 ? (
-          <ul className="space-y-4">
+          <ul className="space-y-8">
             {movies.map((movie) => (
               <li
                 key={movie.id}
-                className="p-4 bg-gray-100 rounded shadow flex justify-between items-center"
+                className="p-8 bg-gray-700 rounded shadow flex justify-between items-center"
               >
                 <div>
                   <strong>{movie.movie_title}</strong> ({movie.movie_genres})
@@ -155,17 +155,17 @@ function WatchlistSingle({ authenticated }) {
             ))}
           </ul>
         ) : (
-          <p>No movies in this watchlist yet.</p>
+          <p className="mt-4">No movies in this watchlist yet.</p>
         )}
 
         {authenticated && (
-          <div className="mt-4">
+          <div className="mt-8 flex space-x-6">
             <input
               type="text"
               value={newMovieId}
               onChange={(e) => setNewMovieId(e.target.value)}
               placeholder="Enter Movie ID to add"
-              className="p-2 border rounded mr-2"
+              className="p-2 border rounded"
             />
             <button
               onClick={handleAddMovie}
@@ -177,16 +177,18 @@ function WatchlistSingle({ authenticated }) {
         )}
 
         {authenticated && (
-          <button
-            onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
-            className="bg-yellow-500 text-white p-2 rounded mr-2 mt-4"
-          >
-            Edit Watchlist
-          </button>
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => navigate(`/watchlist/${watchlistId}/edit`)}
+              className="bg-yellow-500 text-white p-2 rounded"
+            >
+              Edit Watchlist
+            </button>
+          </div>
         )}
         <button
           onClick={() => navigate("/watchlist")}
-          className="bg-gray-500 text-white p-2 rounded mt-4"
+          className="bg-gray-500 text-white p-2 rounded mt-8"
         >
           Back to Watchlist
         </button>
@@ -196,7 +198,7 @@ function WatchlistSingle({ authenticated }) {
         className="modal"
         ref={deleteMovieModalRef}
       >
-        <div className="modal-box">
+        <div className="modal-box p-8">
           <h3 className="text-lg font-bold">Confirm Removal</h3>
           <p className="py-4">
             Are you sure you want to remove this movie from the watchlist?

@@ -1,4 +1,3 @@
-//yo
 import axios from "axios";
 import { useState, useEffect } from "react"; 
 import { Link, useNavigate } from "react-router-dom";
@@ -52,8 +51,8 @@ const Login = ({ authenticated, onAuthenticated }) => {
   };
 
   return (
-    <div className="lg-center container place-content-center">
-      <div className="text-center lg-center cover-full bg-blue-200 pb-4 pt-4">
+    <div className="lg-center place-content-center">
+      <div className="text-center lg-center w-full bg-blue-200 pb-4 pt-4">
         <h2 className="text-4xl text-white">User Login</h2>
       </div>
       <div className="flex flex-col items-center space-y-8 mt-12">

@@ -17,14 +17,12 @@ function MovieSingleCard({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Use image URL from navigation state or movie data
   const displayImageUrl =
     location.state?.imageUrl ||
     (movie?.image_url
       ? `http://127.0.0.1:5000${movie.image_url}`
       : "http://127.0.0.1:5000/static/movies/bloodborne1.jpg");
 
-  // Use movie_title or title
   const title =
     movie && (movie.movie_title || movie.title)
       ? movie.movie_title || movie.title
@@ -45,7 +43,9 @@ function MovieSingleCard({
           <div className="max-w-md">
             <h2 className="mb-2 text-4xl font-bold">{title}</h2>
             <p className="mb-2 text-sm">{movie?.movie_genres || "No genres"}</p>
-            <p className="mb-4">{movie?.description || "No description available"}</p>
+            <p className="mb-4">
+              {movie?.description || "No description available"}
+            </p>
           </div>
         </div>
       </div>
@@ -95,9 +95,7 @@ function MovieSingleCard({
             </button>
           </>
         )}
-        {!(authenticated && role === "admin") && (
-          <div className="flex-1"></div>
-        )}
+        {!(authenticated && role === "admin") && <div className="flex-1"></div>}
       </div>
     </div>
   );

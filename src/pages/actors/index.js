@@ -83,22 +83,26 @@ function ActorsAll({ authenticated }) {
       {error && <div className="alert alert-error mb-6">{error}</div>}
 
       {role === "admin" && (
-        <div className="mb-6 flex space-x-4">
-          <Link to="/actors/create" className="btn btn-success">
-            Create New Actor
-          </Link>
-          <select
-            value={selectedMovieId}
-            onChange={(e) => setSelectedMovieId(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Movie to Add Actor</option>
-            {movies.map((movie) => (
-              <option key={movie.id} value={movie.id}>
-                {movie.movie_title}
-              </option>
-            ))}
-          </select>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <select
+              value={selectedMovieId}
+              onChange={(e) => setSelectedMovieId(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="">Select Movie to Add Actor</option>
+              {movies.map((movie) => (
+                <option key={movie.id} value={movie.id}>
+                  {movie.movie_title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Link to="/actors/create" className="btn btn-success text-white">
+              Create New Actor
+            </Link>
+          </div>
         </div>
       )}
 

@@ -108,6 +108,7 @@ function MovieSingle({ authenticated }) {
       );
       const watchlistResponse = await fetchWatchlists(userId, token);
       setWatchlists(watchlistResponse);
+      window.alert("Movie added to watchlist successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to add to watchlist");
       if (err.response?.status === 401)
@@ -124,6 +125,7 @@ function MovieSingle({ authenticated }) {
     console.log("Token used for rating:", token);
     try {
       await createRating(userId, movieId, rating, token);
+      window.alert("Movie rated successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to rate movie");
       if (err.response?.status === 401)
@@ -145,6 +147,7 @@ function MovieSingle({ authenticated }) {
     try {
       await deleteMovie(movieId, token);
       deleteMovieModalRef.current.close();
+      window.alert("Movie deleted successfully!");
       navigate("/movies");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to delete movie");
@@ -164,6 +167,7 @@ function MovieSingle({ authenticated }) {
       const response = await createReview(movieId, reviewContent, token);
       setReviews([...reviews, response]);
       setReviewContent("");
+      window.alert("Review added successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to add review");
       if (err.response?.status === 401)
@@ -186,6 +190,7 @@ function MovieSingle({ authenticated }) {
       );
       setEditingReviewId(null);
       setReviewContent("");
+      window.alert("Review updated successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to edit review");
       if (err.response?.status === 401)
@@ -210,6 +215,7 @@ function MovieSingle({ authenticated }) {
       setReviews(reviews.filter((r) => r.id !== reviewToDelete));
       setReviewToDelete(null);
       deleteReviewModalRef.current.close();
+      window.alert("Review deleted successfully!");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to delete review");
       if (err.response?.status === 401)
@@ -237,6 +243,7 @@ function MovieSingle({ authenticated }) {
       });
       setActorToRemove(null);
       deleteActorModalRef.current.close();
+      window.alert("Actor removed successfully!");
     } catch (err) {
       setError(
         err.response?.data?.error || "Failed to remove actor from movie"
@@ -247,18 +254,18 @@ function MovieSingle({ authenticated }) {
   };
 
   const renderActors = () => (
-    <div className="mt-6">
+    <div className="mt-8 p-6">
       <h3 className="text-xl mb-4">Actors</h3>
       {movie && movie.actors && movie.actors.length > 0 ? (
         <ul className="list-disc pl-5">
           {movie.actors.map((actor) => (
             <li
               key={actor.id}
-              className="flex justify-between items-center mb-2"
+              className="flex justify-between items-center mb-4 p-2"
             >
               <Link
                 to={`/actors/${actor.id}`}
-                className="text-blue-500 underline"
+                className="text-blue-500 underline text-lg"
               >
                 {actor.name || "Unknown Actor"}
               </Link>
@@ -282,8 +289,8 @@ function MovieSingle({ authenticated }) {
   if (!movie) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto mt-10 px-4">
-      {error && <div className="alert alert-error mb-8">{error}</div>}
+    <div className="container mx-auto mt-12 px-12">
+      {error && <div className="alert alert-error mb-10">{error}</div>}
       <MovieSingleCard
         movie={movie}
         watchlists={watchlists}
@@ -300,13 +307,13 @@ function MovieSingle({ authenticated }) {
 
       {renderActors()}
 
-      <div className="mt-6">
+      <div className="mt-8 p-4">
         <h3 className="text-xl mb-4">Reviews</h3>
         <textarea
           value={reviewContent}
           onChange={(e) => setReviewContent(e.target.value)}
           placeholder="Write your review..."
-          className="p-2 border rounded w-full mb-2"
+          className="p-2 border rounded w-full mb-4"
           rows="3"
         />
         <button
@@ -322,15 +329,15 @@ function MovieSingle({ authenticated }) {
         {reviews.length === 0 ? (
           <p>No reviews yet.</p>
         ) : (
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-4 p-4">
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="p-4 bg-gray-100 rounded shadow flex flex-col"
+                className="p-4 bg-gray-800 rounded shadow flex flex-col text-white"
               >
                 <div className="flex justify-between items-center">
                   <p className="font-semibold">{review.username}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-300">
                     {new Date(review.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -360,13 +367,12 @@ function MovieSingle({ authenticated }) {
         )}
       </div>
 
-      {/* Modals */}
       <dialog
         id="delete_movie_modal"
         className="modal"
         ref={deleteMovieModalRef}
       >
-        <div className="modal-box">
+        <div className="modal-box p-6">
           <h3 className="text-lg font-bold">Confirm Delete</h3>
           <p className="py-4">Are you sure you want to delete this movie?</p>
           <div className="modal-action">
@@ -385,7 +391,7 @@ function MovieSingle({ authenticated }) {
         className="modal"
         ref={deleteReviewModalRef}
       >
-        <div className="modal-box">
+        <div className="modal-box p-6">
           <h3 className="text-lg font-bold">Confirm Delete</h3>
           <p className="py-4">Are you sure you want to delete this review?</p>
           <div className="modal-action">
@@ -407,7 +413,7 @@ function MovieSingle({ authenticated }) {
         className="modal"
         ref={deleteActorModalRef}
       >
-        <div className="modal-box">
+        <div className="modal-box p-6">
           <h3 className="text-lg font-bold">Confirm Removal</h3>
           <p className="py-4">
             Are you sure you want to remove this actor from the movie?

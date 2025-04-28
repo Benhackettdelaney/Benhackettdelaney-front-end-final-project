@@ -6,10 +6,10 @@ import UserWatchlistCard from "../../components/watchlistCard";
 function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
-  const [watchlistToDelete, setWatchlistToDelete] = useState(null); 
+  const [watchlistToDelete, setWatchlistToDelete] = useState(null);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
-  const deleteWatchlistModalRef = useRef(null); 
+  const deleteWatchlistModalRef = useRef(null);
   const navigate = useNavigate();
 
   const fetchWatchlistData = useCallback(async () => {
@@ -38,20 +38,25 @@ function Watchlist({ authenticated }) {
 
   const handleDeleteWatchlist = (watchlistId) => {
     setWatchlistToDelete(watchlistId);
-    deleteWatchlistModalRef.current.showModal(); 
+    deleteWatchlistModalRef.current.showModal();
   };
 
   const confirmDeleteWatchlist = async () => {
     if (!watchlistToDelete) return;
+    console.log("Attempting to delete watchlist with ID:", watchlistToDelete);
     console.log("Token used for deleting watchlist:", token);
     try {
       await deleteWatchlist(watchlistToDelete, userId, token);
+      console.log("Watchlist deleted successfully, updating state...");
       setWatchlist((prev) =>
         prev.filter((item) => item.id !== watchlistToDelete)
       );
-      setWatchlistToDelete(null); 
-      deleteWatchlistModalRef.current.close(); 
+      setWatchlistToDelete(null);
+      deleteWatchlistModalRef.current.close();
+      setError("");
+      window.alert("Watchlist deleted successfully!");
     } catch (err) {
+      console.error("Error deleting watchlist:", err);
       setError(err.error || "Failed to delete watchlist");
       if (err.response?.status === 401) {
         setError("Unauthorized: Please log in again.");
@@ -64,8 +69,8 @@ function Watchlist({ authenticated }) {
       <h2 className="text-2xl font-bold text-primary mb-4">My Watchlists</h2>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       {authenticated && (
-        <div className="mb-4">
-          <Link to="/watchlist/create" className="btn btn-success">
+        <div className="mb-8 flex justify-end">
+          <Link to="/watchlist/create" className="btn btn-success text-white">
             Create Watchlist
           </Link>
         </div>

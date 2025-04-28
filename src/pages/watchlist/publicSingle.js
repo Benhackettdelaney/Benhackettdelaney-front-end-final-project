@@ -44,15 +44,20 @@ function PublicWatchlistSingle({ authenticated }) {
     loadPublicWatchlist();
   }, [watchlistId, token]);
 
-  if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
+  if (loading)
+    return <div className="container mx-auto mt-10 p-10">Loading...</div>;
   if (error)
-    return <div className="container mx-auto mt-10 text-red-500">{error}</div>;
+    return (
+      <div className="container mx-auto mt-10 p-10 text-red-500">{error}</div>
+    );
   if (!watchlistItem)
-    return <div className="container mx-auto mt-10">Watchlist not found</div>;
+    return (
+      <div className="container mx-auto mt-10 p-10">Watchlist not found</div>
+    );
 
   return (
-    <div className="container mx-auto p-8">
-      <h2 className="text-2xl font-bold text-primary mb-4">
+    <div className="container mx-auto p-10">
+      <h2 className="text-2xl font-bold text-primary mb-6">
         {watchlistItem.title}
       </h2>
       <p className="text-gray-600">By: {watchlistItem.username}</p>
@@ -60,14 +65,14 @@ function PublicWatchlistSingle({ authenticated }) {
         Visibility: {watchlistItem.is_public ? "Public" : "Private"}
       </p>
 
-      <div className="mt-4">
-        <h3 className="text-xl font-semibold mb-2">Movies in this Watchlist</h3>
+      <div className="mt-6">
+        <h3 className="text-xl font-semibold mb-4">Movies in this Watchlist</h3>
         {watchlistItem.movies && watchlistItem.movies.length > 0 ? (
-          <ul className="space-y-4">
+          <ul className="space-y-6">
             {watchlistItem.movies.map((movie) => (
               <li
                 key={movie.id}
-                className="p-4 bg-gray-100 rounded shadow flex justify-between items-center"
+                className="p-6 bg-gray-700 rounded shadow flex justify-between items-center text-white"
               >
                 <div>
                   <strong>{movie.title}</strong> ({movie.genres})
@@ -80,7 +85,7 @@ function PublicWatchlistSingle({ authenticated }) {
         )}
       </div>
 
-      <Link to="/public-watchlists" className="btn btn-neutral mt-6">
+      <Link to="/public-watchlists" className="btn btn-neutral mt-8">
         Back to Public Watchlists
       </Link>
     </div>

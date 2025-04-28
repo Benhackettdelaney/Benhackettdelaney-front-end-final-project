@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SignOut from "../components/signOut";
-import { fetchCurrentUser } from "../apis/movie"; 
+import { fetchCurrentUser } from "../apis/movie";
 
 function Profile({ authenticated, onAuthenticated }) {
   const [userData, setUserData] = useState(null);
@@ -33,25 +33,30 @@ function Profile({ authenticated, onAuthenticated }) {
     getUserData();
   }, [authenticated, navigate, token]);
 
-  if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
+  if (loading)
+    return <div className="container mx-auto mt-10 p-6">Loading...</div>;
 
   if (error) {
     return (
-      <div className="container mx-auto mt-10">
-        <p className="text-red-500">{error}</p>
-        <button
-          onClick={() => navigate("/")}
-          className="bg-gray-500 text-white p-2 rounded mt-4"
-        >
-          Back to Login
-        </button>
+      <div className="container mx-auto mt-10 p-6">
+        <p className="text-red-500 text-center">error</p>
+        <div className="flex justify-center">
+          <button
+            onClick={() => navigate("/")}
+            className="bg-gray-500 text-white p-2 rounded mt-4"
+          >
+            Back to Login
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!userData)
     return (
-      <div className="container mx-auto mt-10">No user data available</div>
+      <div className="container mx-auto mt-10 p-6 text-center">
+        No user data available
+      </div>
     );
 
   const gender =
@@ -62,35 +67,46 @@ function Profile({ authenticated, onAuthenticated }) {
       : "Unknown";
 
   return (
-    <div className="container mx-auto mt-10">
-      <h2 className="text-2xl mb-4">User Profile</h2>
-      <div className="p-4 bg-white rounded shadow space-y-4">
+    <div className="container mx-auto mt-10 p-6 space-y-6 text-white text-center">
+      <h2 className="text-2xl mb-4 text-center">User Profile</h2>
+      <div className="w-40 h-40 rounded-full mx-auto mt-4 mb-4">
+        <img
+          src={
+            userData.avatar_url ||
+            "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+          }
+          alt="User Avatar"
+          className="w-full h-full object-cover rounded-full"
+        />
+      </div>
+      <div className="text-center text-lg mb-4">
         <p>
-          <strong>Username:</strong> {userData.username}
+          <b>{userData.username}</b>
         </p>
-        <p>
-          <strong>Email:</strong> {userData.email}
-        </p>
-        <p>
-          <strong>Age:</strong> {userData.raw_user_age}
-        </p>
-        <p>
-          <strong>Gender:</strong> {gender}
-        </p>
-        <p>
-          <strong>User Rating:</strong> {userData.user_rating.toFixed(2)}
-        </p>
-        <p>
-          <strong>Role:</strong> {userData.role}
-        </p>
+      </div>
+      <p>
+        <strong>Email:</strong> {userData.email}
+      </p>
+      <p>
+        <strong>Age:</strong> {userData.raw_user_age}
+      </p>
+      <p>
+        <strong>Gender:</strong> {gender}
+      </p>
+      <p>
+        <strong>Role:</strong> {userData.role}
+      </p>
+      <div className="flex justify-center pt-4">
         <SignOut onAuthenticated={onAuthenticated} />
       </div>
-      <button
-        onClick={() => navigate("/home")}
-        className="bg-gray-500 text-white p-2 rounded mt-4"
-      >
-        Back to Home
-      </button>
+      <div className="flex justify-center">
+        <button
+          onClick={() => navigate("/home")}
+          className="bg-gray-500 text-white p-2 rounded mt-4"
+        >
+          Back to Home
+        </button>
+      </div>
     </div>
   );
 }

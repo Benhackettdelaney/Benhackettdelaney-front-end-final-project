@@ -1,4 +1,4 @@
-// src/pages/actors/create.js
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createActor } from "../../apis/actor";

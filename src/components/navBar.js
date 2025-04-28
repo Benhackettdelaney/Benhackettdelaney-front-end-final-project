@@ -1,7 +1,6 @@
-// src/components/navBar.js
 import React, { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import SignOut from "./signOut"; 
+import SignOut from "./signOut";
 
 const Navbar = ({
   authenticated,
@@ -105,7 +104,7 @@ const Navbar = ({
               </label>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52"
+                className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-20"
               >
                 <li>
                   <button

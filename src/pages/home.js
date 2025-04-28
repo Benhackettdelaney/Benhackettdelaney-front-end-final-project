@@ -30,8 +30,7 @@ function Home({ authenticated, onAuthenticated }) {
     const fetchRatings = async () => {
       try {
         const data = await fetchUserRatings(userId, token);
-        console.log("User ratings response:", data.rated_movies); // Debug log
-        // Normalize and filter ratings
+        console.log("User ratings response:", data.rated_movies);
         const validRatings = data.rated_movies
           .filter((rating) => rating.movie_id || rating.id)
           .map((rating) => ({
@@ -54,15 +53,14 @@ function Home({ authenticated, onAuthenticated }) {
     };
 
     fetchRatings();
-  }, [userId, navigate, authenticated, token]);
+  }, [userId, authenticated, token, navigate]);
 
   useEffect(() => {
     if (userRatings.length > 0 || hasEverHadRatings) {
       const fetchTopMovies = async () => {
         try {
           const data = await fetchTopRankedMovies(userId, token);
-          console.log("Top movies response:", data.top_ranked_movies); // Debug log
-          // Normalize topMovies data
+          console.log("Top movies response:", data.top_ranked_movies);
           const normalizedMovies = data.top_ranked_movies.map((movie) => ({
             ...movie,
             movie_title: movie.title || movie.movie_title || "Untitled",
@@ -108,6 +106,7 @@ function Home({ authenticated, onAuthenticated }) {
       setEditingRatingId(null);
       setNewRatingValue("");
       setError("");
+      window.alert("Rating updated successfully!");
     } catch (err) {
       setError(err.error || "Failed to update rating");
       if (err.response?.status === 401) {
@@ -131,6 +130,7 @@ function Home({ authenticated, onAuthenticated }) {
       setRatingToDelete(null);
       deleteRatingModalRef.current.close();
       setError("");
+      window.alert("Rating deleted successfully!");
     } catch (err) {
       setError(err.error || "Failed to delete rating");
       if (err.response?.status === 401) {
@@ -142,14 +142,14 @@ function Home({ authenticated, onAuthenticated }) {
   const renderRankedMovies = (movies) => {
     if (movies.length === 0 && !error) {
       return (
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-500 py-6">
           No recommended movies available. Try rating some movies!
         </div>
       );
     }
 
     return (
-      <div className="flex flex-wrap gap-8 justify-center">
+      <div className="flex flex-wrap gap-8 justify-center py-4">
         {movies.map((movie) => (
           <div
             key={movie.id || movie.movie_title || Math.random()}
@@ -164,20 +164,20 @@ function Home({ authenticated, onAuthenticated }) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen py-8">
         <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <h2 className="text-3xl font-bold text-primary mb-6">
-        Welcome, {role ? `${role} User` : "User"}!
+    <div className="container mx-auto p-8">
+      <h2 className="text-3xl font-bold text-primary mb-8">
+        Welcome{role === "admin" ? " Admin" : ""}!
       </h2>
-      {error && <div className="alert alert-error mb-6">{error}</div>}
+      {error && <div className="alert alert-error mb-8">{error}</div>}
       {!hasEverHadRatings && userRatings.length === 0 ? (
-        <div className="text-center">
+        <div className="text-center py-6">
           <h3 className="text-4xl font-bold text-gray-700 mb-4">
             Go to the movies section and explore to find movies!
           </h3>
@@ -187,22 +187,22 @@ function Home({ authenticated, onAuthenticated }) {
         </div>
       ) : (
         <>
-          <section className="mb-12">
-            <h3 className="text-2xl font-semibold mb-4">Recommended Movies</h3>
+          <section className="mb-16">
+            <h3 className="text-2xl font-semibold mb-6">Recommended Movies</h3>
             {renderRankedMovies(topMovies)}
           </section>
 
           <section>
-            <h3 className="text-2xl font-semibold mb-4">Your Top Ratings</h3>
+            <h3 className="text-2xl font-semibold mb-6">Your Top Ratings</h3>
             {userRatings.length === 0 ? (
-              <div className="text-center text-gray-500">
+              <div className="text-center text-gray-500 py-6">
                 No ratings yet. Explore movies to add some!
                 <Link to="/movies" className="underline text-blue-500 ml-2">
                   Browse Movies
                 </Link>
               </div>
             ) : (
-              <div className="flex flex-wrap gap-8 justify-center">
+              <div className="flex flex-wrap gap-8 justify-center py-4">
                 {userRatings.map((rating) => (
                   <div key={rating.id} className="w-1/4 flex-shrink-0 px-4">
                     <MovieCard
@@ -238,7 +238,7 @@ function Home({ authenticated, onAuthenticated }) {
         className="modal"
         ref={deleteRatingModalRef}
       >
-        <div className="modal-box">
+        <div className="modal-box p-6">
           <h3 className="text-lg font-bold">Confirm Delete</h3>
           <p className="py-4">Are you sure you want to delete this rating?</p>
           <div className="modal-action">

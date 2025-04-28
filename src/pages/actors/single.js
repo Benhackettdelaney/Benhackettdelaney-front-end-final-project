@@ -131,7 +131,7 @@ function ActorSingle({ authenticated }) {
                   {visibleMovies < movies.length && (
                     <button
                       onClick={handleShowMore}
-                      className="btn btn-primary"
+                      className="btn btn-primary text-white"
                     >
                       Show More
                     </button>
@@ -139,7 +139,7 @@ function ActorSingle({ authenticated }) {
                   {visibleMovies > 20 && (
                     <button
                       onClick={handleShowLess}
-                      className="btn btn-secondary"
+                      className="btn btn-secondary text-white"
                     >
                       Show Less
                     </button>
@@ -154,14 +154,14 @@ function ActorSingle({ authenticated }) {
             {role === "admin" && (
               <button
                 onClick={() => navigate("/actors")}
-                className="btn btn-primary"
+                className="btn btn-primary text-white"
               >
                 Back to Actors List
               </button>
             )}
             <button
               onClick={() => navigate("/movies")}
-              className="btn btn-primary"
+              className="btn btn-primary text-white"
             >
               Back to Movies List
             </button>

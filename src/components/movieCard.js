@@ -13,7 +13,6 @@ const MovieCard = ({
   onSave,
   onCancel,
 }) => {
-  // Use movie_title or title, movie_genres or genres
   const title =
     movie && (movie.movie_title || movie.title)
       ? movie.movie_title || movie.title
@@ -24,7 +23,7 @@ const MovieCard = ({
       : "No genres";
   const displayImageUrl = movie.image_url
     ? `http://127.0.0.1:5000${movie.image_url}`
-    : "http://127.0.0.1:5000/static/movies/bloodborne1.jpg"; // Fallback
+    : "http://127.0.0.1:5000/static/movies/bloodborne1.jpg";
 
   return (
     <div className="card bg-base-100 w-96 shadow-sm hover:shadow-lg transition-shadow relative">
@@ -36,7 +35,7 @@ const MovieCard = ({
               ? `/movies/${movie.id}`
               : "#")
           }
-          state={{ imageUrl: displayImageUrl }} // Pass image URL to MovieSingleCard
+          state={{ imageUrl: displayImageUrl }}
         >
           <img
             src={displayImageUrl}
@@ -53,12 +52,12 @@ const MovieCard = ({
               ? `/movies/${movie.id}`
               : "#")
           }
-          state={{ imageUrl: displayImageUrl }} // Pass image URL to MovieSingleCard
+          state={{ imageUrl: displayImageUrl }}
           className="block"
         >
-          <h2 className="card-title text-black hover:text-primary">{title}</h2>
+          <h2 className="card-title text-white hover:text-primary">{title}</h2>
         </Link>
-        <p className="text-gray-600">{genres}</p>
+        <p className="text-white opacity-70">{genres}</p>
         {movie && movie.rating && (
           <p className="text-sm text-yellow-600">
             Rating: {movie.rating.toFixed(2)}
@@ -97,10 +96,16 @@ const MovieCard = ({
               </div>
             ) : (
               <>
-                <button onClick={onEdit} className="btn btn-warning btn-sm">
+                <button
+                  onClick={onEdit}
+                  className="btn btn-warning btn-sm text-white"
+                >
                   Edit
                 </button>
-                <button onClick={onDelete} className="btn btn-error btn-sm">
+                <button
+                  onClick={onDelete}
+                  className="btn btn-error btn-sm text-white"
+                >
                   Delete
                 </button>
               </>

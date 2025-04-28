@@ -66,7 +66,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
   const occupationOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (
-    <div className="lg-center container place-content-center">
+    <div className="lg-center place-content-center">
       <div className="text-center lg-center cover-full bg-blue-200 pb-4 pt-4">
         <h2 className="text-4xl text-white">User Register</h2>
       </div>
