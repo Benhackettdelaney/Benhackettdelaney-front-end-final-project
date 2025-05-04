@@ -4,31 +4,38 @@ import { fetchPublicWatchlists } from "../../apis/watchlist";
 import { fetchMovie } from "../../apis/movie";
 
 function PublicWatchlistSingle({ authenticated }) {
+  // Get watchlist ID from the URL parameters
   const { id: watchlistId } = useParams();
   const [watchlistItem, setWatchlistItem] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Get the authentication token from localStorage
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+    // Function to load the public watchlist based on the watchlist ID
     const loadPublicWatchlist = async () => {
       try {
-        const publicLists = await fetchPublicWatchlists();
-        const item = publicLists.find((wl) => wl.id.toString() === watchlistId);
+        const publicLists = await fetchPublicWatchlists(); // Fetch all public watchlists
+        const item = publicLists.find((wl) => wl.id.toString() === watchlistId); // Find the specific watchlist by ID
         if (item) {
           if (item.movie_ids && item.movie_ids.length > 0) {
-            const moviePromises = item.movie_ids.map((movieId) =>
-              fetchMovie(movieId, token)
+            // If there are movie IDs in the watchlist, fetch the movie details
+            const moviePromises = item.movie_ids.map(
+              (movieId) => fetchMovie(movieId, token) // Fetch each movie using the movie ID
             );
+
+            // Wait for all movie data to load
             const movies = await Promise.all(moviePromises);
+            // Map movie data to the required format
             item.movies = movies.map((movie) => ({
               id: movie.id,
               title: movie.movie_title,
               genres: movie.movie_genres,
             }));
           } else {
-            item.movies = [];
+            item.movies = []; // If no movies are in the watchlist, set it as an empty array
           }
           setWatchlistItem(item);
         } else {
@@ -41,15 +48,21 @@ function PublicWatchlistSingle({ authenticated }) {
       }
     };
 
+    // Call the function to load the watchlist
     loadPublicWatchlist();
   }, [watchlistId, token]);
 
+  // Show loading message while data is being fetched
   if (loading)
     return <div className="container mx-auto mt-10 p-10">Loading...</div>;
+
+  // Show error message if there was an error fetching the watchlist
   if (error)
     return (
       <div className="container mx-auto mt-10 p-10 text-red-500">{error}</div>
     );
+
+  // Show message if no watchlist item is found
   if (!watchlistItem)
     return (
       <div className="container mx-auto mt-10 p-10">Watchlist not found</div>

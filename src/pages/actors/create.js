@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createActor, fetchCountries } from "../../apis/actor";
 
 function ActorCreate({ authenticated }) {
+  // State variables to store form data, countries, errors, loading state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -15,23 +16,26 @@ function ActorCreate({ authenticated }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  // Get token and role from localStorage
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
   useEffect(() => {
+    // If not logged in or authenticated, show an error and redirect
     if (!token || !authenticated) {
       setError("Please log in to continue");
       setLoading(false);
-      navigate("/");
+      navigate("/"); // Redirect to home page
       return;
     }
 
+    // Check the user role and fetch countries
     const checkUserRoleAndFetchCountries = async () => {
       try {
-        setIsAdmin(role === "admin");
+        setIsAdmin(role === "admin"); // Check if user is an admin
 
-        const countryData = await fetchCountries(token);
-        setCountries(countryData);
+        const countryData = await fetchCountries(token); // Fetch countries
+        setCountries(countryData); // Set countries data
       } catch (err) {
         console.error("Failed to fetch countries:", err.response?.data);
         setError(err.response?.data?.error || "Failed to load countries");
@@ -40,16 +44,19 @@ function ActorCreate({ authenticated }) {
         setLoading(false);
       }
     };
+    // Call function to check role and fetch data
     checkUserRoleAndFetchCountries();
   }, [navigate, authenticated, token, role]);
 
+  // Handle changes in input fields
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value, // Update the respective field in formData
     }));
   };
 
+  // Validate the form data before submitting
   const validateForm = () => {
     if (!formData.name.trim()) return "Name is required";
     if (formData.description && formData.description.length > 500)
@@ -67,20 +74,25 @@ function ActorCreate({ authenticated }) {
     return "";
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
+
+    // If user is not admin or not authenticated, show error
     if (!isAdmin || !authenticated) {
       setError("Only admins can create actors");
       return;
     }
 
+    // Validate form data before submitting
     const validationError = validateForm();
     if (validationError) {
-      setError(validationError);
+      setError(validationError); // If validation fails, show error
       return;
     }
 
     try {
+      // Prepare the data to be sent to the API
       const requestData = {
         name: formData.name,
         description: formData.description || undefined,
@@ -88,6 +100,7 @@ function ActorCreate({ authenticated }) {
         birthday: formData.birthday || undefined,
         nationality: formData.nationality || undefined,
       };
+      // Create the actor using the API
       await createActor(requestData, token);
       setFormData({
         name: "",
@@ -105,6 +118,7 @@ function ActorCreate({ authenticated }) {
     }
   };
 
+  // Show loading message
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
   const errStyle = { color: "red" };

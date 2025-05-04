@@ -14,15 +14,17 @@ function MovieSingleCard({
   role,
   movieId,
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate(); // navigate hook to handle page redirection
+  const location = useLocation(); // location hook to access the current route state
 
+  // Determine the movie image to display, checking the location state or movie object
   const displayImageUrl =
     location.state?.imageUrl ||
     (movie?.image_url
       ? `http://127.0.0.1:5000${movie.image_url}`
       : "http://127.0.0.1:5000/static/movies/bloodborne1.jpg");
 
+  // Set the title of the movie, defaulting to "Untitled" if not available
   const title =
     movie && (movie.movie_title || movie.title)
       ? movie.movie_title || movie.title

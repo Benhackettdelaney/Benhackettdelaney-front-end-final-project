@@ -10,18 +10,20 @@ function Profile({ authenticated, onAuthenticated }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Fetch user data when component mounts or when authentication changes
   useEffect(() => {
     if (!token || !authenticated) {
       setError("Please log in to view your profile");
       setLoading(false);
-      navigate("/");
+      navigate("/"); // Redirect to login if not authenticated
       return;
     }
 
+    // Fetch the current user's data
     const getUserData = async () => {
       try {
-        const data = await fetchCurrentUser(token);
-        setUserData(data);
+        const data = await fetchCurrentUser(token); // Fetch data from API
+        setUserData(data); // Store user data
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError(err.error || "Failed to load profile data");
@@ -30,12 +32,14 @@ function Profile({ authenticated, onAuthenticated }) {
       }
     };
 
-    getUserData();
+    getUserData(); // Call the function to fetch data
   }, [authenticated, navigate, token]);
 
+  // Show a loading state if data is still being fetched
   if (loading)
     return <div className="container mx-auto mt-10 p-6">Loading...</div>;
 
+  // Show an error message if there was an issue
   if (error) {
     return (
       <div className="container mx-auto mt-10 p-6">
@@ -52,6 +56,7 @@ function Profile({ authenticated, onAuthenticated }) {
     );
   }
 
+  // If no user data is available, show a message
   if (!userData)
     return (
       <div className="container mx-auto mt-10 p-6 text-center">
@@ -59,6 +64,7 @@ function Profile({ authenticated, onAuthenticated }) {
       </div>
     );
 
+  // Determine gender based on the value in userData
   const gender =
     userData.user_gender === 0
       ? "Male"

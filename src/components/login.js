@@ -6,30 +6,34 @@ const Login = ({ authenticated, onAuthenticated }) => {
   const errStyle = { color: "red" };
   const navigate = useNavigate();
 
+  // States for form inputs and error messages
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
   const [errMessage, setErrMessage] = useState("");
 
+  // Redirect to home if already authenticated
   useEffect(() => {
     if (authenticated) {
       navigate("/home");
     }
   }, [authenticated, navigate]);
 
+  // Handles form submission
   const handleClick = () => {
     axios
       .post(
-        `http://127.0.0.1:5000/auth/login`,
+        `http://127.0.0.1:5000/auth/login`, // API endpoint for login
         {
-          email: form.email,
+          email: form.email, // send email and password to server
           password: form.password,
         },
-        { withCredentials: true }
+        { withCredentials: true } // ensures cookies are sent
       )
       .then((response) => {
         console.log("Login response:", response.data);
+        // On successful login, save user info and token, then navigate to home
         onAuthenticated(true, {
           token: response.data.access_token,
           userId: response.data.user_id,
@@ -43,10 +47,11 @@ const Login = ({ authenticated, onAuthenticated }) => {
       });
   };
 
+  // Update form state with user input
   const handleForm = (e) => {
     setForm((prevState) => ({
       ...prevState,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value, // dynamically update input fields
     }));
   };
 

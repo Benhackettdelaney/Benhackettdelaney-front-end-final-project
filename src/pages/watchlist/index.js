@@ -7,24 +7,34 @@ function Watchlist({ authenticated }) {
   const [watchlist, setWatchlist] = useState([]);
   const [error, setError] = useState("");
   const [watchlistToDelete, setWatchlistToDelete] = useState(null);
+
+  // Get userId and token from localStorage
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+
+  // Ref for modal used to confirm deletion
   const deleteWatchlistModalRef = useRef(null);
   const navigate = useNavigate();
 
+  // Fetch watchlists when the component is loaded
   const fetchWatchlistData = useCallback(async () => {
     if (!token || !authenticated) {
+      // If not authenticated, show error and navigate to login
       setError("Please log in to view your watchlist");
       navigate("/");
       return;
     }
     console.log("Token used for fetching watchlists:", token);
     try {
+      // Fetch watchlists for the user
       const watchlistData = await fetchWatchlists(userId, token);
       setWatchlist(watchlistData);
     } catch (err) {
       console.error("Watchlist fetch error:", err);
+      // Handle errors during fetch
       setError(err.error || "Failed to fetch watchlist");
+
+      // If unauthenticated, prompt user to log in again
       if (err.response?.status === 401 || err.response?.status === 400) {
         setError("Invalid or missing authentication. Please log in again.");
         navigate("/");
@@ -32,32 +42,39 @@ function Watchlist({ authenticated }) {
     }
   }, [navigate, userId, token, authenticated]);
 
+  // Call fetch function when component is mounted
   useEffect(() => {
     fetchWatchlistData();
   }, [fetchWatchlistData]);
 
+  // Handle the deletion of a watchlist
   const handleDeleteWatchlist = (watchlistId) => {
     setWatchlistToDelete(watchlistId);
     deleteWatchlistModalRef.current.showModal();
   };
 
+  // Confirm and delete the selected watchlist
   const confirmDeleteWatchlist = async () => {
     if (!watchlistToDelete) return;
     console.log("Attempting to delete watchlist with ID:", watchlistToDelete);
     console.log("Token used for deleting watchlist:", token);
     try {
+      // Attempt to delete the watchlist
       await deleteWatchlist(watchlistToDelete, userId, token);
       console.log("Watchlist deleted successfully, updating state...");
+      // Update state to remove the deleted watchlist
       setWatchlist((prev) =>
         prev.filter((item) => item.id !== watchlistToDelete)
       );
       setWatchlistToDelete(null);
+      // Close modal and show success alert
       deleteWatchlistModalRef.current.close();
       setError("");
       window.alert("Watchlist deleted successfully!");
     } catch (err) {
       console.error("Error deleting watchlist:", err);
       setError(err.error || "Failed to delete watchlist");
+      // Handle unauthorized error and prompt user to log in again
       if (err.response?.status === 401) {
         setError("Unauthorized: Please log in again.");
       }

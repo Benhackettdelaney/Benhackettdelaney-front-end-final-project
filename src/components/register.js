@@ -6,6 +6,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
   const errStyle = { color: "red" };
   const navigate = useNavigate();
 
+  // States for form inputs and error messages
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -16,32 +17,37 @@ const Register = ({ authenticated, onAuthenticated }) => {
   });
   const [errMessage, setErrMessage] = useState("");
 
+  // Redirect to home if already authenticated
   useEffect(() => {
     if (authenticated) {
       navigate("/home");
     }
   }, [authenticated, navigate]);
 
+  // Handles form submission
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // prevent page reload on form submit
 
+    // Payload for registration request
     const payload = {
       username: form.username,
       email: form.email,
       password: form.password,
-      user_gender: parseInt(form.user_gender),
-      user_occupation_label: parseInt(form.user_occupation_label),
-      raw_user_age: parseInt(form.raw_user_age),
+      user_gender: parseInt(form.user_gender), // convert to number
+      user_occupation_label: parseInt(form.user_occupation_label), // convert to number
+      raw_user_age: parseInt(form.raw_user_age), // convert to number
     };
 
     console.log("Sending payload:", payload);
 
+    // Send registration data to server
     axios
       .post(`http://127.0.0.1:5000/auth/register`, payload, {
-        withCredentials: true,
+        withCredentials: true, // include credentials with request
       })
       .then((response) => {
         console.log("Registration response:", response.data);
+        // On successful registration, save user info and token, then navigate to home
         const authData = {
           token: response.data.access_token,
           userId: response.data.user_id,
@@ -52,10 +58,12 @@ const Register = ({ authenticated, onAuthenticated }) => {
       })
       .catch((err) => {
         console.error("Error:", err.response?.data || err.message);
+        // Show error message if registration fails
         setErrMessage(err.response?.data?.error || "Registration failed");
       });
   };
 
+  // Update form state with user input
   const handleForm = (e) => {
     setForm((prevState) => ({
       ...prevState,
@@ -63,6 +71,7 @@ const Register = ({ authenticated, onAuthenticated }) => {
     }));
   };
 
+  // Occupation label options
   const occupationOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (

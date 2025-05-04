@@ -10,18 +10,21 @@ const Navbar = ({
   selectedGenre,
   onGenreSelect,
 }) => {
-  const location = useLocation();
-  const role = localStorage.getItem("role");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const location = useLocation(); // get the current location (URL path)
+  const role = localStorage.getItem("role"); // get user role from local storage
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // state to manage dropdown visibility
 
   useEffect(() => {
-    console.log("Navbar rendered for path:", location.pathname);
-  }, [location.pathname]);
+    console.log("Navbar rendered for path:", location.pathname); // log when navbar re-renders based on path change
+  }, [location.pathname]); // dependency array ensures the effect runs when location changes
 
+  // Don't render navbar on home or register pages
   if (location.pathname === "/" || location.pathname === "/register") {
+    // return null if the user is on the homepage or register page
     return null;
   }
 
+  // List of genres for the dropdown menu
   const genres = [
     "Action",
     "Adventure",
@@ -43,13 +46,14 @@ const Navbar = ({
     "Western",
   ];
 
+  // Function to toggle the genre dropdown visibility
   const toggleDropdown = () => {
-    setIsDropdownOpen((prev) => !prev);
+    setIsDropdownOpen((prev) => !prev); // toggle the state between true and false
   };
-
+  // Function to handle genre selection
   const handleGenreSelect = (genre) => {
-    onGenreSelect(genre);
-    setIsDropdownOpen(false); 
+    onGenreSelect(genre); // call the parent function to update the selected genre
+    setIsDropdownOpen(false);  // close the dropdown after selection
   };
 
   return (

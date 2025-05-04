@@ -4,6 +4,7 @@ import { fetchWatchlist, updateWatchlist } from "../../apis/watchlist";
 import { fetchMovie } from "../../apis/movie";
 
 function WatchlistSingle({ authenticated }) {
+  // Get watchlist ID from URL params
   const { watchlistId } = useParams();
   const [watchlistItem, setWatchlistItem] = useState(null);
   const [movies, setMovies] = useState([]);
@@ -16,51 +17,61 @@ function WatchlistSingle({ authenticated }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Checks if the data exists
     if (!watchlistId || !userId || !token || !authenticated) {
       setError("Please log in or provide a valid watchlist ID");
-      navigate("/");
+      navigate("/"); // Navigate to home if conditions aren't met
       return;
     }
 
     const loadWatchlist = async () => {
       try {
+        // Fetch the watchlist data
         const watchlistData = await fetchWatchlist(watchlistId, userId, token);
         setWatchlistItem(watchlistData);
 
+        // Fetch all movies in the watchlist using movie IDs
         const moviePromises = watchlistData.movie_ids.map((movieId) =>
           fetchMovie(movieId, token)
         );
         const movieData = await Promise.all(moviePromises);
-        setMovies(movieData);
+        setMovies(movieData); // Store the movie data
       } catch (err) {
         console.error("Fetch watchlist error:", err);
         setError(err.response?.data?.error || "Failed to fetch watchlist item");
       }
     };
 
+    // Call function to load watchlist and movies
     loadWatchlist();
   }, [watchlistId, userId, navigate, token, authenticated]);
 
+  // Handle removing a movie from the watchlist
   const handleRemoveMovie = (movieIdToRemove) => {
     setMovieToRemove(movieIdToRemove);
+    // Show confirmation modal
     deleteMovieModalRef.current.showModal();
   };
 
+  // Confirm removal of a movie
   const confirmRemoveMovie = async () => {
+    // No movie to remove
     if (!movieToRemove) return;
     try {
+      // Update watchlist by removing the selected movie
       await updateWatchlist(
         watchlistId,
         { user_id: userId, remove_movie_id: movieToRemove },
         token
       );
+      // Update state to reflect the removed movie
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: prev.movie_ids.filter((id) => id !== movieToRemove),
       }));
       setMovies((prev) => prev.filter((movie) => movie.id !== movieToRemove));
-      setMovieToRemove(null);
-      deleteMovieModalRef.current.close();
+      setMovieToRemove(null); // Reset removal state
+      deleteMovieModalRef.current.close(); // Close modal
       setError("");
     } catch (err) {
       console.error("Remove movie error:", err);
@@ -68,9 +79,11 @@ function WatchlistSingle({ authenticated }) {
     }
   };
 
+  // Toggle visibility of the watchlist
   const handleToggleVisibility = async () => {
-    const newVisibility = !watchlistItem.is_public;
+    const newVisibility = !watchlistItem.is_public; // Toggle visibility
     try {
+      // Update watchlist visibility
       await updateWatchlist(
         watchlistId,
         { user_id: userId, is_public: newVisibility },
@@ -79,32 +92,36 @@ function WatchlistSingle({ authenticated }) {
       setWatchlistItem((prev) => ({
         ...prev,
         is_public: newVisibility,
-      }));
+      })); // Update state
     } catch (err) {
       console.error("Toggle visibility error:", err);
       setError(err.response?.data?.error || "Failed to update visibility");
     }
   };
 
+  // Add a new movie to the watchlist
   const handleAddMovie = async () => {
     if (!newMovieId) {
+      // Show error if no movie ID
       setError("Please enter a movie ID to add.");
       return;
     }
 
     try {
+      // Update watchlist with new movie
       await updateWatchlist(
         watchlistId,
         { user_id: userId, movie_id: newMovieId },
         token
       );
+      // Fetch and add the new movie to the list
       const newMovie = await fetchMovie(newMovieId, token);
       setWatchlistItem((prev) => ({
         ...prev,
         movie_ids: [...prev.movie_ids, newMovieId],
       }));
       setMovies((prev) => [...prev, newMovie]);
-      setNewMovieId("");
+      setNewMovieId(""); // Reset movie ID input
       setError("");
     } catch (err) {
       console.error("Add movie error:", {
@@ -115,11 +132,14 @@ function WatchlistSingle({ authenticated }) {
         headers: err.response?.headers,
       });
       setError(
-        err.response?.data?.error || err.message || "Movie is already in this Watchlist"
+        err.response?.data?.error ||
+          err.message ||
+          "Movie is already in this Watchlist"
       );
     }
   };
 
+  // Display loading message while fetching
   if (!watchlistItem) return <div>Loading...</div>;
 
   return (

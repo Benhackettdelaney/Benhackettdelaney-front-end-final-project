@@ -9,23 +9,27 @@ function PublicWatchlists() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch public watchlists when the component mounts
     const loadPublicWatchlists = async () => {
       try {
         const watchlistData = await fetchPublicWatchlists();
-        setWatchlists(watchlistData);
+        setWatchlists(watchlistData); // Set the fetched watchlists to state
       } catch (err) {
         console.error("Error fetching public watchlists:", err);
         setError(err.error || "Failed to fetch public watchlists");
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false once data has been fetched
       }
     };
 
+    // Call the function to load the watchlists
     loadPublicWatchlists();
   }, []);
 
+  // Show a loading message while the data is being fetched
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
+  // Show an error message if there was an error fetching the watchlists
   if (error)
     return <div className="container mx-auto mt-10 text-red-500">{error}</div>;
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { createRating } from "../../apis/ratings";
 import { updateWatchlist } from "../../apis/watchlist";
 import { fetchMovie, deleteMovie } from "../../apis/movie";
+// importing API functions
 import { fetchWatchlists } from "../../apis/watchlist";
 import {
   fetchReviews,
@@ -14,7 +15,10 @@ import { removeActorFromMovie } from "../../apis/actor";
 import MovieSingleCard from "../../components/movieSingleCard";
 
 function MovieSingle({ authenticated }) {
+  // get movie id from URL
   const { movieId } = useParams();
+
+  // set up state
   const [movie, setMovie] = useState(null);
   const [watchlists, setWatchlists] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -27,20 +31,25 @@ function MovieSingle({ authenticated }) {
   const role = localStorage.getItem("role");
   const [error, setError] = useState("");
   const [reviewToDelete, setReviewToDelete] = useState(null);
+
+  // set up modal references
   const deleteMovieModalRef = useRef(null);
   const deleteReviewModalRef = useRef(null);
   const deleteActorModalRef = useRef(null);
   const navigate = useNavigate();
 
+  // fetch movie, watchlists, and reviews when component loads
   useEffect(() => {
     if (!movieId) return;
 
+    // redirect if not authenticated
     if (!token || !authenticated) {
       setError("Please log in to view this page");
       navigate("/");
       return;
     }
 
+    // fetch movie details
     const fetchMovieData = async () => {
       console.log("Token used for fetching movie:", token);
       try {
@@ -55,6 +64,7 @@ function MovieSingle({ authenticated }) {
       }
     };
 
+    // fetch user's watchlists
     const fetchWatchlistsData = async () => {
       console.log("Token used for fetching watchlists:", token);
       try {
@@ -70,6 +80,7 @@ function MovieSingle({ authenticated }) {
       }
     };
 
+    // fetch reviews for the movie
     const fetchReviewsData = async () => {
       console.log("Token used for fetching reviews:", token);
       try {
@@ -90,6 +101,7 @@ function MovieSingle({ authenticated }) {
     }
   }, [movieId, userId, navigate, authenticated, token]);
 
+  // add movie to a watchlist
   const handleAddToWatchlist = async () => {
     if (!userId || !authenticated) {
       setError("Please log in to add to watchlist");
@@ -126,6 +138,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // rate a movie
   const handleRate = async (rating) => {
     if (!userId || !authenticated) {
       setError("Please log in to rate movies");
@@ -144,6 +157,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // open delete movie modal
   const handleDelete = () => {
     if (!userId || !authenticated) {
       setError("Please log in to delete movies");
@@ -153,6 +167,7 @@ function MovieSingle({ authenticated }) {
     deleteMovieModalRef.current.showModal();
   };
 
+  // confirm and delete movie
   const confirmDeleteMovie = async () => {
     console.log("Token used for deleting movie:", token);
     try {
@@ -168,6 +183,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // add a new review
   const handleAddReview = async () => {
     if (!userId || !authenticated) {
       setError("Please log in to add a review");
@@ -188,6 +204,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // edit an existing review
   const handleEditReview = async (reviewId) => {
     if (!userId || !authenticated) {
       setError("Please log in to edit reviews");
@@ -212,6 +229,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // open delete review modal
   const handleDeleteReview = (reviewId) => {
     if (!userId || !authenticated) {
       setError("Please log in to delete reviews");
@@ -221,6 +239,7 @@ function MovieSingle({ authenticated }) {
     deleteReviewModalRef.current.showModal();
   };
 
+  // confirm and delete review
   const confirmDeleteReview = async () => {
     if (!reviewToDelete) return;
     console.log("Token used for deleting review:", token);
@@ -238,6 +257,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // open remove actor modal
   const handleRemoveActor = (actorId) => {
     if (!userId || !authenticated || role !== "admin") {
       setError("Only admins can remove actors from movies");
@@ -247,6 +267,7 @@ function MovieSingle({ authenticated }) {
     deleteActorModalRef.current.showModal();
   };
 
+  // confirm and remove actor from movie
   const confirmRemoveActor = async () => {
     if (!actorToRemove) return;
     console.log("Token used for removing actor:", token);
@@ -269,6 +290,7 @@ function MovieSingle({ authenticated }) {
     }
   };
 
+  // render list of actors
   const renderActors = () => (
     <div className="mt-8 p-6">
       <h3 className="text-xl mb-4">Actors</h3>
@@ -302,8 +324,10 @@ function MovieSingle({ authenticated }) {
     </div>
   );
 
+  // show loading screen while movie is loading
   if (!movie) return <div>Loading...</div>;
 
+  // render main movie detail page
   return (
     <div className="container mx-auto mt-12 px-12">
       {error && <div className="alert alert-error mb-10">{error}</div>}

@@ -5,6 +5,7 @@ import { fetchAllMovies } from "../../apis/movie";
 import ActorCard from "../../components/actorCard";
 
 function ActorsAll({ authenticated }) {
+  // state variables
   const [actors, setActors] = useState([]);
   const [movies, setMovies] = useState([]);
   const [selectedMovieId, setSelectedMovieId] = useState("");
@@ -16,12 +17,14 @@ function ActorsAll({ authenticated }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // if not logged in, redirect
     if (!token || !authenticated) {
       setError("Please log in to view this page");
       navigate("/");
       return;
     }
 
+    // fetch actors and movies
     const fetchData = async () => {
       try {
         const actorsData = await fetchAllActors(token);
@@ -30,6 +33,7 @@ function ActorsAll({ authenticated }) {
         const moviesData = await fetchAllMovies(token);
         setMovies(moviesData);
       } catch (err) {
+        // handle errors
         console.error("Fetch data error:", err);
         setError(err.response?.data?.error || "Failed to fetch data");
       }
@@ -39,20 +43,24 @@ function ActorsAll({ authenticated }) {
   }, [token, authenticated, navigate]);
 
   const handleAddToMovie = async (actorId) => {
+    // only admins can add actors
     if (!role || role !== "admin") {
       setError("Only admins can add actors to movies");
       return;
     }
+    // check if movie is selected
     if (!selectedMovieId) {
       setError("Please select a movie");
       return;
     }
 
     try {
+      // add actor to movie
       await addActorToMovie(selectedMovieId, actorId, token);
       setError("");
       window.alert("Actor added to movie successfully!");
     } catch (err) {
+      // handle errors when adding actor
       console.error("Add to movie error:", {
         message: err.message,
         response: err.response,
@@ -64,36 +72,40 @@ function ActorsAll({ authenticated }) {
   };
 
   const handleDelete = (actorId) => {
+    // only admins can delete actors
     console.log("Delete button triggered in ActorsAll for actor ID:", actorId, {
       timestamp: new Date().toISOString(),
       role: role,
-      callStack: new Error().stack, 
+      callStack: new Error().stack,
     });
     if (!role || role !== "admin") {
       setError("Only admins can delete actors");
       console.log("Non-admin attempted delete for actor ID:", actorId);
       return;
     }
+    // set actor to delete
     setActorToDelete(actorId);
-    setError(""); 
-    deleteActorModalRef.current.showModal();
+    setError("");
+    deleteActorModalRef.current.showModal(); // show modal
   };
 
   const confirmDeleteActor = async () => {
+    // confirm and delete actor
     if (!actorToDelete) return;
     try {
       console.log("Confirming deletion for actor ID:", actorToDelete, {
         timestamp: new Date().toISOString(),
       });
-      await deleteActor(actorToDelete, token);
-      setActors(actors.filter((a) => a.id !== actorToDelete));
+      await deleteActor(actorToDelete, token); // delete actor
+      setActors(actors.filter((a) => a.id !== actorToDelete)); // remove from list
       setActorToDelete(null);
-      deleteActorModalRef.current.close();
+      deleteActorModalRef.current.close(); // close modal
       setTimeout(() => {
         window.alert("Actor deleted successfully!");
       }, 300);
       setError("");
     } catch (err) {
+      // handle delete errors
       console.error("Delete actor error:", {
         message: err.message,
         response: err.response,

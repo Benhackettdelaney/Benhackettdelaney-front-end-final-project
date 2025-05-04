@@ -6,7 +6,7 @@ import { fetchAllMovies } from "../../apis/movie";
 function ActorSingle({ authenticated }) {
   const [actor, setActor] = useState(null);
   const [movies, setMovies] = useState([]);
-  const [visibleMovies, setVisibleMovies] = useState(20); 
+  const [visibleMovies, setVisibleMovies] = useState(20);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const { actorId } = useParams();
@@ -15,6 +15,7 @@ function ActorSingle({ authenticated }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // check if logged in, else redirect
     if (!token || !authenticated) {
       setError("Please log in to view this page");
       navigate("/");
@@ -24,14 +25,18 @@ function ActorSingle({ authenticated }) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // fetch actor data
         const actorData = await fetchActor(actorId, token);
         console.log("Actor Data:", actorData);
         setActor(actorData);
 
+        // fetch all movies data
         const moviesData = await fetchAllMovies(token);
         console.log("All Movies Data:", moviesData);
 
+        // filter movies related to actor
         let actorMovies = [];
+        // if no filtered movies, create a fallback
         if (actorData.movies && actorData.movies.length > 0) {
           actorMovies = moviesData.filter((movie) =>
             actorData.movies.some((actorMovie) => {
@@ -57,6 +62,7 @@ function ActorSingle({ authenticated }) {
 
         setMovies(actorMovies);
       } catch (err) {
+        // handle fetch errors
         setError(err.message || "Failed to fetch actor data");
         console.error("Error:", err);
       } finally {
@@ -67,15 +73,18 @@ function ActorSingle({ authenticated }) {
     fetchData();
   }, [actorId, token, authenticated, navigate]);
 
+  // show more movies
   const handleShowMore = () => {
     setVisibleMovies((prev) => prev + 20);
   };
 
+  // show fewer movies
   const handleShowLess = () => {
     setVisibleMovies((prev) => Math.max(20, prev - 20));
   };
 
   if (error) {
+    // display error message
     return (
       <div className="container mx-auto p-6">
         <div className="alert alert-error mb-6">{error}</div>
@@ -84,6 +93,7 @@ function ActorSingle({ authenticated }) {
   }
 
   if (loading) {
+    // display loading error message
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">Loading...</div>
@@ -92,6 +102,7 @@ function ActorSingle({ authenticated }) {
   }
 
   if (!actor) {
+    // display no data message
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">No actor data available.</div>

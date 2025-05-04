@@ -4,6 +4,7 @@ import { fetchCurrentUser, createMovie } from "../../apis/movie";
 import { fetchAllActors } from "../../apis/actor";
 
 function MovieCreate({ authenticated }) {
+  // State for form data, actors, errors, admin check, and loading state
   const [formData, setFormData] = useState({
     id: "",
     movie_title: "",
@@ -19,6 +20,7 @@ function MovieCreate({ authenticated }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Movie genre options
   const genres = [
     "Action",
     "Adventure",
@@ -40,32 +42,34 @@ function MovieCreate({ authenticated }) {
     "Western",
   ];
 
+  // Fetch user and actors when the component loads
   useEffect(() => {
     if (!token || !authenticated) {
       setError("Please log in to continue");
       setLoading(false);
-      navigate("/");
+      navigate("/"); // Redirect if not logged in
       return;
     }
 
     const checkUserRoleAndFetchActors = async () => {
       try {
-        const userData = await fetchCurrentUser(token);
-        setIsAdmin(userData.role === "admin");
+        const userData = await fetchCurrentUser(token); // Fetch current user info
+        setIsAdmin(userData.role === "admin"); // Check if the user is an admin
 
-        const actorData = await fetchAllActors(token);
-        setActors(actorData);
+        const actorData = await fetchAllActors(token); // Fetch all actors
+        setActors(actorData); // Store actors in state
       } catch (err) {
         console.error("Failed to fetch data:", err.response?.data);
-        setError("Please log in to continue");
-        setIsAdmin(false);
+        setError("Please log in to continue"); // Show error if fetching fails
+        setIsAdmin(false); // Set user as not admin if error occurs
       } finally {
-        setLoading(false);
+        setLoading(false); // Stop loading
       }
     };
     checkUserRoleAndFetchActors();
   }, [navigate, authenticated, token]);
 
+  // Handle input change in the form
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -73,6 +77,7 @@ function MovieCreate({ authenticated }) {
     }));
   };
 
+  // Validate the form before submission
   const validateForm = () => {
     if (!formData.id.trim()) return "Movie ID is required";
     if (!formData.movie_title.trim()) return "Movie title is required";
@@ -82,6 +87,7 @@ function MovieCreate({ authenticated }) {
     return "";
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAdmin || !authenticated) {
@@ -96,6 +102,7 @@ function MovieCreate({ authenticated }) {
     }
 
     try {
+      // Create movie and reset form
       await createMovie(formData, token);
       setFormData({
         id: "",
@@ -106,7 +113,7 @@ function MovieCreate({ authenticated }) {
         image: "bloodborne1.jpg",
       });
       setError("");
-      navigate("/movies");
+      navigate("/movies"); // Redirect to movies page
       window.alert("Movie created successfully!");
     } catch (err) {
       console.error("Movie create error:", err.response?.data);
@@ -114,8 +121,10 @@ function MovieCreate({ authenticated }) {
     }
   };
 
+  // Show loading message while data is being fetched
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
+  // Error message style
   const errStyle = { color: "red" };
 
   return (

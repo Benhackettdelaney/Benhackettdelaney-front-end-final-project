@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import MovieCard from "../../components/movieCard";
 import { fetchAllMovies } from "../../apis/movie";
 
+// main All component
 function All({ authenticated, search, selectedGenre }) {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
@@ -12,19 +13,23 @@ function All({ authenticated, search, selectedGenre }) {
   const location = useLocation();
   const role = localStorage.getItem("role");
 
+  // run this when page path changes
   useEffect(() => {
     fetchMovies();
   }, [location.pathname]);
 
+  // filter movies when search or genre changes
   useEffect(() => {
     let filtered = movies;
 
+    // filter by search
     if (search && search.length > 1) {
       filtered = filtered.filter((movie) =>
         (movie.movie_title || "").toLowerCase().includes(search.toLowerCase())
       );
     }
 
+    // filter by genre
     if (selectedGenre) {
       filtered = filtered.filter((movie) =>
         (movie.movie_genres || "")
@@ -33,10 +38,11 @@ function All({ authenticated, search, selectedGenre }) {
       );
     }
 
-    setFilteredMovies(filtered);
-    setVisibleMovies(32);
+    setFilteredMovies(filtered); // update list
+    setVisibleMovies(32); // reset movie count
   }, [movies, search, selectedGenre]);
 
+  // get movies from the backend
   const fetchMovies = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -54,18 +60,22 @@ function All({ authenticated, search, selectedGenre }) {
         setError("Unauthorized: Please log in again.");
       }
     } finally {
+      // small delay to keep spinner for a bit
       setTimeout(() => setIsLoading(false), 1000);
     }
   };
 
+  // show more movies
   const handleShowMore = () => {
     setVisibleMovies((prev) => prev + 32);
   };
 
+  // show fewer movies
   const handleShowLess = () => {
     setVisibleMovies((prev) => Math.max(32, prev - 32));
   };
 
+  // show loading spinner
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">

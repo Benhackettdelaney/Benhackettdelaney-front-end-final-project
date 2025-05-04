@@ -3,8 +3,12 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchCurrentUser, fetchMovie, updateMovie } from "../../apis/movie";
 import { fetchAllActors } from "../../apis/actor";
 
+// Main component for editing movie
 function MovieEdit({ authenticated }) {
+  // Get movie ID from URL params
   const { movieId } = useParams();
+
+  // State to store form data
   const [formData, setFormData] = useState({
     movie_title: "",
     movie_genres: "",
@@ -12,6 +16,8 @@ function MovieEdit({ authenticated }) {
     actor_id: "",
     image: "bloodborne1.jpg",
   });
+
+  // States
   const [actors, setActors] = useState([]);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -19,6 +25,7 @@ function MovieEdit({ authenticated }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Array of movie genres
   const genres = [
     "Action",
     "Adventure",
@@ -40,59 +47,65 @@ function MovieEdit({ authenticated }) {
     "Western",
   ];
 
+  // Use effect hook to fetch data when component mounts
   useEffect(() => {
+    // Check if the user is not logged in
     if (!token || !authenticated) {
       setError("Please log in to continue");
       setLoading(false);
-      navigate("/");
+      navigate("/"); // Redirect to home page
       return;
     }
 
+    // Check if movie ID is provided
     if (!movieId) {
       setError("No movie ID provided");
       setLoading(false);
-      navigate("/movies");
+      navigate("/movies"); // Redirect to movies list if no movie ID
       return;
     }
 
+    // Fetch data asynchronously
     const checkUserRoleAndFetchData = async () => {
       try {
-        const userData = await fetchCurrentUser(token);
-        setIsAdmin(userData.role === "admin");
+        const userData = await fetchCurrentUser(token); // Get current user data
+        setIsAdmin(userData.role === "admin"); // Set admin status
 
-        const movieData = await fetchMovie(movieId, token);
+        const movieData = await fetchMovie(movieId, token); // Fetch movie data
         setFormData({
           movie_title: movieData.movie_title,
           movie_genres: genres.includes(movieData.movie_genres)
             ? movieData.movie_genres
             : "",
           description: movieData.description || "",
-          actor_id: movieData.actors[0]?.id || "",
+          actor_id: movieData.actors[0]?.id || "", // Set first actor ID
           image: "bloodborne1.jpg",
         });
 
-        const actorData = await fetchAllActors(token);
-        setActors(actorData);
+        const actorData = await fetchAllActors(token); // Fetch actors data
+        setActors(actorData); // Set actors in state
       } catch (err) {
         console.error("Error:", err.response?.data);
-        setError(err.response?.data?.error || "Failed to load movie data");
+        setError(err.response?.data?.error || "Failed to load movie data"); // Show error if fetch fails
         setIsAdmin(false);
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false after data is fetched
       }
     };
 
-    checkUserRoleAndFetchData();
+    checkUserRoleAndFetchData(); // Call the fetch function
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieId, navigate, authenticated, token]);
 
+  // Handle form input changes
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value, // Update the relevant field in formData
     }));
   };
 
+  // Validate form inputs before submitting
   const validateForm = () => {
     if (!formData.movie_title.trim()) return "Movie title is required";
     if (!formData.movie_genres) return "Genre is required";
@@ -101,6 +114,7 @@ function MovieEdit({ authenticated }) {
     return "";
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAdmin || !authenticated) {
@@ -108,12 +122,14 @@ function MovieEdit({ authenticated }) {
       return;
     }
 
+    // Validate form
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
+    // Prepare data to send in the request
     const data = {
       movie_title: formData.movie_title,
       movie_genres: formData.movie_genres,
@@ -123,18 +139,20 @@ function MovieEdit({ authenticated }) {
     };
 
     try {
-      await updateMovie(movieId, data, token);
-      setError("");
-      navigate("/movies");
+      await updateMovie(movieId, data, token); // Send update request to API
+      setError(""); // Clear error message
+      navigate("/movies"); // Redirect to movies list after successful update
       window.alert("Movie updated successfully!");
     } catch (err) {
       console.error("Update error:", err.response?.data);
-      setError(err.response?.data?.error || "Failed to update movie");
+      setError(err.response?.data?.error || "Failed to update movie"); // Show error if update fails
     }
   };
 
+  // Show loading message if still fetching data
   if (loading) return <div className="container mx-auto mt-10">Loading...</div>;
 
+  // Style for error messages
   const errStyle = { color: "red" };
 
   return (

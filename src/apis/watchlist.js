@@ -1,8 +1,9 @@
-
 import axios from "axios";
 
+// Base URL for the API
 const BASE_URL = "http://127.0.0.1:5000";
 
+// Create a new watchlist
 export const createWatchlist = async (formData, token) => {
   try {
     const response = await axios.post(
@@ -18,6 +19,7 @@ export const createWatchlist = async (formData, token) => {
   }
 };
 
+// Fetch all watchlists for a user
 export const fetchWatchlists = async (userId, token) => {
   try {
     const response = await axios.get(`${BASE_URL}/watchlists`, {
@@ -30,6 +32,7 @@ export const fetchWatchlists = async (userId, token) => {
   }
 };
 
+// Fetch a specific watchlist by ID
 export const fetchWatchlist = async (watchlistId, userId, token) => {
   try {
     const response = await axios.get(`${BASE_URL}/watchlists/${watchlistId}`, {
@@ -46,6 +49,7 @@ export const fetchWatchlist = async (watchlistId, userId, token) => {
   }
 };
 
+// Update an existing watchlist
 export const updateWatchlist = async (watchlistId, data, token) => {
   try {
     const response = await axios.put(
@@ -65,6 +69,7 @@ export const updateWatchlist = async (watchlistId, data, token) => {
   }
 };
 
+// Delete a specific watchlist
 export const deleteWatchlist = async (watchlistId, userId, token) => {
   try {
     const response = await axios.delete(
@@ -84,6 +89,7 @@ export const deleteWatchlist = async (watchlistId, userId, token) => {
   }
 };
 
+// Fetch all public watchlists
 export const fetchPublicWatchlists = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/watchlists/public`);

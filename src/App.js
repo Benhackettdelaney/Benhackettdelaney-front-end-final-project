@@ -25,59 +25,69 @@ import ActorEdit from "./pages/actors/edit";
 import ActorSingle from "./pages/actors/single";
 
 function App() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [search, setSearch] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("");
+  const [authenticated, setAuthenticated] = useState(false); // State for authentication status
+  const [search, setSearch] = useState(""); // State for search input
+  const [selectedGenre, setSelectedGenre] = useState(""); // State for selected genre
 
+  // Check if user is authenticated on app load
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     const role = localStorage.getItem("role");
 
     if (token && userId && role) {
+      // If token, userId, and role exist, validate token
       axios
         .get("http://127.0.0.1:5000/auth/current-user", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
-          setAuthenticated(true);
+          setAuthenticated(true); // Set user as authenticated
+          // Store user details in localStorage
           localStorage.setItem("userId", response.data.user_id);
           localStorage.setItem("role", response.data.role);
         })
         .catch((err) => {
-          setAuthenticated(false);
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          localStorage.removeItem("role");
+          setAuthenticated(false); // If error, set user as not authenticated
+          localStorage.removeItem("token"); // Clear stored token
+          localStorage.removeItem("userId"); // Clear stored userId
+          localStorage.removeItem("role"); // Clear stored role
         });
     } else {
-      setAuthenticated(false);
+      setAuthenticated(false); // If no token, set user as not authenticated
     }
   }, []);
 
+  // Function to handle authentication status change
   const onAuthenticated = (auth, authData) => {
-    setAuthenticated(auth);
+    setAuthenticated(auth); // Set authentication status
     if (auth && authData) {
+      // If authenticated, store token, userId, and role
       const { token, userId, role } = authData;
       const cleanToken = token.replace(/['"]+/g, "").trim();
       localStorage.setItem("token", cleanToken);
       localStorage.setItem("userId", userId);
       localStorage.setItem("role", role);
     } else {
+      // If not authenticated, remove stored data
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("role");
     }
   };
 
+  // Function to handle search input change
   const onHandleChange = (e) => {
     setSearch(e.target.value);
   };
 
+  // Function to handle genre selection
   const handleGenreSelect = (genre) => {
+    // Toggle the genre filter
     setSelectedGenre(genre === selectedGenre ? "" : genre);
   };
 
+  // Routes
   return (
     <Router>
       <Navbar
